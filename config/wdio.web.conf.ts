@@ -1,4 +1,7 @@
 import type { Options } from '@wdio/types';
+import path from 'path';
+
+const rootDir = path.resolve(__dirname, '..');
 
 export const config: Options.Testrunner = {
     //
@@ -9,7 +12,7 @@ export const config: Options.Testrunner = {
     autoCompileOpts: {
         autoCompile: true,
         tsNodeOpts: {
-            project: './tsconfig.json',
+            project: path.join(rootDir, 'tsconfig.json'),
             transpileOnly: true,
         },
     },
@@ -19,9 +22,7 @@ export const config: Options.Testrunner = {
     // Specify Test Files
     // ==================
     specs: [
-        './test/web/**/*.spec.ts',
-        'test/web/**/*.spec.ts',
-        'test\\web\\**\\*.spec.ts',
+        path.join(rootDir, 'test', 'web', '**', '*.spec.ts'),
     ],
     exclude: [],
 
@@ -34,8 +35,11 @@ export const config: Options.Testrunner = {
         {
             browserName: 'chrome',
             'goog:chromeOptions': {
-                args: process.env.HEADLESS === 'true' ? ['--headless', '--disable-gpu'] : [],
+                args: process.env.HEADLESS === 'true'
+                    ? ['--headless', '--disable-gpu', '--ignore-certificate-errors']
+                    : ['--ignore-certificate-errors'],
             },
+            acceptInsecureCerts: true,
         },
     ],
 
@@ -45,7 +49,7 @@ export const config: Options.Testrunner = {
     // ===================
     logLevel: 'info',
     bail: 0,
-    baseUrl: process.env.BASE_URL || 'https://local.prosaurus.com',
+    baseUrl: process.env.BASE_URL || 'https://test.prosaurus.com:8443',
     waitforTimeout: 10000,
     connectionRetryTimeout: 120000,
     connectionRetryCount: 3,

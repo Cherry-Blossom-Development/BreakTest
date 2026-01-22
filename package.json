@@ -4,8 +4,13 @@
   "description": "End-to-end test automation framework for Breakroom - Web (Selenium) and Mobile (Appium)",
   "main": "index.js",
   "scripts": {
+    "db:setup": "ts-node database/setup.ts",
+    "db:reset": "ts-node database/setup.ts",
+    "test:env:start": "bash scripts/start-test-env.sh",
+    "test:env:stop": "bash scripts/stop-test-env.sh",
     "test:web": "wdio run ./config/wdio.web.conf.ts",
     "test:web:headless": "HEADLESS=true wdio run ./config/wdio.web.conf.ts",
+    "test:web:fresh": "npm run db:setup && npm run test:web",
     "test:android": "wdio run ./config/wdio.android.conf.ts",
     "test:ios": "wdio run ./config/wdio.ios.conf.ts",
     "test:all": "npm run test:web && npm run test:android",
@@ -29,7 +34,12 @@
   "author": "Cherry Blossom Development",
   "license": "ISC",
   "type": "commonjs",
+  "dependencies": {
+    "dotenv": "^16.4.7",
+    "mysql2": "^3.11.0"
+  },
   "devDependencies": {
+    "@types/mocha": "^10.0.10",
     "@types/node": "^25.0.9",
     "@wdio/allure-reporter": "^9.23.2",
     "@wdio/appium-service": "^9.23.2",

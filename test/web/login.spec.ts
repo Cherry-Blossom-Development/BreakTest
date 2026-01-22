@@ -1,4 +1,5 @@
 import LoginPage from '../../pages/web/LoginPage';
+import TestUsers from '../data/testUsers';
 
 describe('Breakroom Web - Login', () => {
     beforeEach(async () => {
@@ -18,7 +19,7 @@ describe('Breakroom Web - Login', () => {
     });
 
     it('should show error with invalid credentials', async () => {
-        await LoginPage.login('invalid@example.com', 'wrongpassword');
+        await LoginPage.login(TestUsers.invalid.handle, TestUsers.invalid.password);
 
         // Wait for error message or redirect
         await browser.pause(2000);
@@ -28,18 +29,19 @@ describe('Breakroom Web - Login', () => {
         expect(url).toContain('login');
     });
 
-    // Requires TEST_USERNAME and TEST_PASSWORD environment variables
-    // Skip if credentials are not configured
-    it('should login successfully with valid credentials', async function () {
-        const username = process.env.TEST_USERNAME;
-        const password = process.env.TEST_PASSWORD;
+    it('should login successfully with valid credentials', async () => {
+        await LoginPage.login(TestUsers.standard.handle, TestUsers.standard.password);
 
-        if (!username || !password) {
-            this.skip();
-            return;
-        }
+        // Wait for redirect after successful login
+        await browser.pause(3000);
 
-        await LoginPage.login(username, password);
+        // Verify we're redirected away from login page
+        const url = await LoginPage.getUrl();
+        expect(url).not.toContain('login');
+    });
+
+    it('should login successfully with admin credentials', async () => {
+        await LoginPage.login(TestUsers.admin.handle, TestUsers.admin.password);
 
         // Wait for redirect after successful login
         await browser.pause(3000);

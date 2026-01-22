@@ -14,13 +14,15 @@
     "types": [
       "node",
       "@wdio/globals/types",
-      "expect-webdriverio"
+      "expect-webdriverio",
+      "mocha"
     ]
   },
   "include": [
     "test/**/*.ts",
     "config/**/*.ts",
-    "pages/**/*.ts"
+    "pages/**/*.ts",
+    "database/**/*.ts"
   ],
   "exclude": [
     "node_modules",
