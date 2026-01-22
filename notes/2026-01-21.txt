@@ -1,0 +1,30 @@
+Project Structure:
+  BreakTest/
+  ├── config/
+  │   ├── wdio.web.conf.ts      # Selenium/Chrome config
+  │   ├── wdio.android.conf.ts  # Appium Android config
+  │   └── wdio.ios.conf.ts      # Appium iOS config
+  ├── pages/
+  │   ├── web/                  # Web page objects
+  │   ├── android/              # Android page objects
+  │   └── ios/                  # iOS page objects
+  ├── test/
+  │   ├── web/                  # Web test specs
+  │   ├── android/              # Android test specs
+  │   └── ios/                  # iOS test specs
+  ├── apps/                     # Place APK/IPA files here
+  ├── package.json
+  ├── tsconfig.json
+  └── README.md
+
+  Available Commands:
+  - npm run test:web - Run web tests
+  - npm run test:web:headless - Run web tests headless
+  - npm run test:android - Run Android tests
+  - npm run test:ios - Run iOS tests
+  - npm run allure:report - Generate and open test reports
+
+  Next Steps:
+  1. Copy your Breakroom APK to apps/breakroom.apk for Android testing
+  2. Update page object selectors to match your actual app elements
+  3. Add test credentials via environment variables (TEST_USERNAME, TEST_PASSWORD)

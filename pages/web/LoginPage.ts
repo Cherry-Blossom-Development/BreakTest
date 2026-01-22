@@ -16,15 +16,15 @@ class LoginPage extends BasePage {
     }
 
     get loginButton() {
-        return $('button[type="submit"], button:has-text("Login"), button:has-text("Sign In")');
+        return $('button[type="submit"]');
     }
 
     get errorMessage() {
-        return $('.error, .error-message, [class*="error"]');
+        return $('.error');
     }
 
     get signupLink() {
-        return $('a[href*="signup"], a:has-text("Sign Up"), a:has-text("Register")');
+        return $('a[href*="signup"]');
     }
 
     /**
@@ -40,7 +40,7 @@ class LoginPage extends BasePage {
      * @param password - The password
      */
     async login(username: string, password: string): Promise<void> {
-        await this.usernameInput.waitForDisplayed();
+        await this.usernameInput.waitForExist();
         await this.usernameInput.setValue(username);
         await this.passwordInput.setValue(password);
         await this.loginButton.click();

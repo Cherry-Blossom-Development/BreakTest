@@ -18,7 +18,11 @@ export const config: Options.Testrunner = {
     // ==================
     // Specify Test Files
     // ==================
-    specs: ['./test/web/**/*.spec.ts'],
+    specs: [
+        './test/web/**/*.spec.ts',
+        'test/web/**/*.spec.ts',
+        'test\\web\\**\\*.spec.ts',
+    ],
     exclude: [],
 
     //
