@@ -1,4 +1,3 @@
-import type { Options } from '@wdio/types';
 import path from 'path';
 import dotenv from 'dotenv';
 import BreakroomReporter from '../reporters/BreakroomReporter';
@@ -6,7 +5,7 @@ import BreakroomReporter from '../reporters/BreakroomReporter';
 // Load environment variables from .env.test
 dotenv.config({ path: path.join(__dirname, '..', '.env.test') });
 
-export const config: Options.Testrunner = {
+export const config = {
     //
     // ====================
     // Runner Configuration
@@ -107,7 +106,7 @@ export const config: Options.Testrunner = {
     //
     // Hooks
     // =====
-    afterTest: async function (test, context, { error, passed }) {
+    afterTest: async function (test: any, context: any, { error, passed }: { error?: Error; passed: boolean }) {
         if (!passed) {
             await driver.takeScreenshot();
         }
