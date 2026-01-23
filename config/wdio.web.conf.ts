@@ -1,7 +1,12 @@
 import type { Options } from '@wdio/types';
 import path from 'path';
+import dotenv from 'dotenv';
+import BreakroomReporter from '../reporters/BreakroomReporter';
 
 const rootDir = path.resolve(__dirname, '..');
+
+// Load environment variables from .env.test
+dotenv.config({ path: path.join(rootDir, '.env.test') });
 
 export const config: Options.Testrunner = {
     //
@@ -74,6 +79,12 @@ export const config: Options.Testrunner = {
                 outputDir: 'allure-results',
                 disableWebdriverStepsReporting: true,
                 disableWebdriverScreenshotsReporting: false,
+            },
+        ],
+        [
+            BreakroomReporter,
+            {
+                platform: 'web',
             },
         ],
     ],
