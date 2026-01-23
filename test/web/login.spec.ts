@@ -51,9 +51,7 @@ describe('Breakroom Web - Login', () => {
         expect(url).not.toContain('login');
     });
 
-    // Note: Signup link is not present on current login page
-    // This test is skipped until signup link is added
-    it.skip('should navigate to signup page', async () => {
+    it('should navigate to signup page', async () => {
         await LoginPage.goToSignup();
 
         await browser.pause(1000);
