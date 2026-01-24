@@ -6,6 +6,8 @@
   "scripts": {
     "db:setup": "ts-node database/setup.ts",
     "db:reset": "ts-node database/setup.ts",
+    "db:sync-schema": "ts-node database/sync-schema.ts",
+    "db:sync-schema:dry-run": "ts-node database/sync-schema.ts --dry-run --verbose",
     "test:env:start": "bash scripts/start-test-env.sh",
     "test:env:stop": "bash scripts/stop-test-env.sh",
     "test:web": "wdio run ./config/wdio.web.conf.ts",
