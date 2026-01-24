@@ -1,6 +1,7 @@
 import path from 'path';
 import dotenv from 'dotenv';
 import BreakroomReporter from '../reporters/BreakroomReporter';
+import { ensureTestEnvironment } from '../utils/ensureTestEnv';
 
 const rootDir = path.resolve(__dirname, '..');
 
@@ -91,6 +92,15 @@ export const config = {
     //
     // Hooks
     // =====
+
+    /**
+     * Gets executed once before all workers get launched.
+     * Ensures the test environment is running before tests start.
+     */
+    onPrepare: async function () {
+        await ensureTestEnvironment();
+    },
+
     afterTest: async function (test: any, context: any, { error, passed }: { error?: Error; passed: boolean }) {
         if (!passed) {
             await browser.takeScreenshot();
