@@ -38,5 +38,6 @@ coverage/
 
 # Temporary files
 *.log
+*.backup
 tmp/
 temp/
