@@ -19,6 +19,7 @@ interface TestResult {
 interface SuiteResultData {
     name: string;
     file_path?: string;
+    category?: string;
     duration_ms?: number;
     tests: TestResult[];
 }
@@ -71,9 +72,15 @@ export default class BreakroomReporter extends WDIOReporter {
         if (suite.title) {
             const suiteId = `${suite.file}:${suite.title}`;
             this.currentSuiteId = suiteId;
+            const filePath = suite.file ? suite.file.replace(/\\/g, '/') : undefined;
+            // Extract category from filename (e.g., "chat.spec.ts" -> "chat")
+            const category = filePath
+                ? filePath.split('/').pop()?.replace('.spec.ts', '') || undefined
+                : undefined;
             this.collectedSuites.set(suiteId, {
                 name: suite.title,
-                file_path: suite.file ? suite.file.replace(/\\/g, '/') : undefined,
+                file_path: filePath,
+                category,
                 tests: []
             });
         }
