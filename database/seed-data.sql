@@ -128,6 +128,5 @@ FROM users u WHERE u.handle IN ('testadmin', 'testuser');
 INSERT INTO user_blog (user_id, blog_url, blog_name)
 SELECT id, handle, CONCAT(handle, '''s Blog') FROM users WHERE handle IN ('testadmin', 'testuser');
 
--- Create user profiles for test users
-INSERT INTO user_profiles (user_id, bio)
-SELECT id, 'Test user for automated testing' FROM users WHERE handle IN ('testadmin', 'testuser', 'testunverified');
+-- Set bio for test users (bio column is on users table)
+UPDATE users SET bio = 'Test user for automated testing' WHERE handle IN ('testadmin', 'testuser', 'testunverified');

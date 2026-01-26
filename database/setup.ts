@@ -118,9 +118,12 @@ async function setupDatabase(): Promise<void> {
     const connection = await mysql.createConnection(dbConfig);
 
     try {
-        // Create database if it doesn't exist
-        console.log(`Creating database '${dbName}' if not exists...`);
-        await connection.query(`CREATE DATABASE IF NOT EXISTS \`${dbName}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`);
+        // Drop and recreate database for a completely clean slate
+        // This ensures no orphan tables persist from previous runs
+        console.log(`Dropping database '${dbName}' if exists...`);
+        await connection.query(`DROP DATABASE IF EXISTS \`${dbName}\``);
+        console.log(`Creating fresh database '${dbName}'...`);
+        await connection.query(`CREATE DATABASE \`${dbName}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`);
         await connection.query(`USE \`${dbName}\``);
 
         // Read and execute schema
