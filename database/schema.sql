@@ -1,7 +1,7 @@
 -- =============================================================================
 -- Test Database Schema
 -- Generated from production database: breakroom
--- Generated at: 2026-01-24T18:38:11.789Z
+-- Generated at: 2026-01-26T22:27:00.159Z
 --
 -- Blacklisted tables (not included):
 --   - test_cases
@@ -237,6 +237,7 @@ CREATE TABLE `chat_messages` (
   `message` varchar(1000) DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `image_path` varchar(255) DEFAULT NULL,
+  `video_path` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `user_id` (`user_id`),
   KEY `idx_chat_messages_room_id` (`room_id`),
