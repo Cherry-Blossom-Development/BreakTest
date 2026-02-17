@@ -23,7 +23,10 @@
     "allure:open": "allure open allure-report",
     "allure:report": "npm run allure:generate && npm run allure:open",
     "lint": "tsc --noEmit",
-    "clean": "rm -rf allure-results allure-report dist logs"
+    "clean": "rm -rf allure-results allure-report dist logs",
+    "demo:db:setup": "ts-node database/setup.ts",
+    "demo:record": "wdio run ./demos/config/wdio.demo.conf.ts",
+    "demo:record:script": "wdio run ./demos/config/wdio.demo.conf.ts --spec"
   },
   "keywords": [
     "testing",
