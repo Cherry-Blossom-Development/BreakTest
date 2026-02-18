@@ -76,15 +76,15 @@ export default class BasePage {
     /**
      * Pull to refresh gesture
      */
-    async pullToRefresh(): Promise<void> {
+    async pullToRefresh(waitMs: number = 1000): Promise<void> {
         const { height, width } = await browser.getWindowSize();
         await browser.action('pointer')
             .move({ x: Math.floor(width / 2), y: Math.floor(height * 0.2) })
             .down()
-            .move({ x: Math.floor(width / 2), y: Math.floor(height * 0.8), duration: 300 })
+            .move({ x: Math.floor(width / 2), y: Math.floor(height * 0.8), duration: 200 })
             .up()
             .perform();
-        await browser.pause(1000); // Wait for refresh
+        await browser.pause(waitMs); // Wait for refresh
     }
 
     /**

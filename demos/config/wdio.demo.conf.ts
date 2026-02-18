@@ -22,7 +22,7 @@ export const config = {
     // ==================
     // Specify Demo Scripts
     // ==================
-    specs: ['./demos/scripts/**/*.demo.ts'],
+    specs: [path.join(__dirname, '..', 'scripts', '**', '*.demo.ts')],
     exclude: [],
 
     //
@@ -33,13 +33,16 @@ export const config = {
     capabilities: [
         {
             platformName: 'iOS',
-            'appium:deviceName': process.env.DEMO_DEVICE_NAME || 'iPhone 15 Pro',
-            'appium:platformVersion': process.env.DEMO_PLATFORM_VERSION || '17.0',
+            'appium:deviceName': process.env.DEMO_DEVICE_NAME || 'iPhone 17 Pro Max',
+            'appium:platformVersion': process.env.DEMO_PLATFORM_VERSION || '26.2',
             'appium:automationName': 'XCUITest',
-            'appium:app': process.env.DEMO_APP_PATH || path.resolve('./apps/Breakroom-Demo.app'),
-            'appium:bundleId': 'com.cherryblossom.breakroom',
+            // Use the already-installed app via bundleId
+            'appium:bundleId': 'com.cherryblossomdev.Breakroom',
             'appium:noReset': false,
             'appium:fullReset': false,
+            // Force terminate and relaunch app for fresh start
+            'appium:forceAppLaunch': true,
+            'appium:shouldTerminateApp': true,
             'appium:newCommandTimeout': 300,
             // Demo-specific: longer timeouts for natural pacing
             'appium:wdaLaunchTimeout': 120000,

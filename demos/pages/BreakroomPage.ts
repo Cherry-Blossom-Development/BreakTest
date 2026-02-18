@@ -8,50 +8,53 @@ import BasePage from './BasePage';
 
 class BreakroomPage extends BasePage {
     /**
-     * Page elements
+     * Page elements - using text/predicate selectors for compatibility
      */
     get screenTitle() {
-        return $('~Breakroom');
+        // Look for "Breakroom" text in navigation bar
+        return $('-ios predicate string:type == "XCUIElementTypeStaticText" AND label == "Breakroom"');
     }
 
     get blocksList() {
-        return $('~blocksList');
+        return $('-ios predicate string:type == "XCUIElementTypeScrollView"');
     }
 
     get addBlockButton() {
-        return $('~addBlockButton');
+        // Plus button in toolbar
+        return $('-ios predicate string:type == "XCUIElementTypeButton" AND label == "plus"');
     }
 
     get refreshButton() {
-        return $('~refreshButton');
+        // Refresh button (arrow.clockwise)
+        return $('-ios predicate string:type == "XCUIElementTypeButton" AND label == "arrow.clockwise"');
     }
 
     /**
-     * Get a block card by its title
+     * Get a block card by its title text
      */
     blockCard(title: string) {
-        return $(`~blockCard_${title}`);
+        return $(`-ios predicate string:type == "XCUIElementTypeStaticText" AND label == "${title}"`);
     }
 
     /**
-     * Get the chat block (first one found)
+     * Get the chat block (look for "Demo Team" chat)
      */
     get chatBlock() {
-        return $('~chatBlock');
+        return $('-ios predicate string:type == "XCUIElementTypeStaticText" AND label == "Demo Team"');
     }
 
     /**
      * Get the updates block
      */
     get updatesBlock() {
-        return $('~updatesBlock');
+        return $('-ios predicate string:type == "XCUIElementTypeStaticText" AND label == "Updates"');
     }
 
     /**
      * Wait for Breakroom screen to be visible
      */
     async waitForScreen(timeout: number = 10000): Promise<void> {
-        // Wait for either the title or the blocks list
+        // Wait for either the title or the add button
         try {
             await this.screenTitle.waitForDisplayed({ timeout });
         } catch {
@@ -65,6 +68,9 @@ class BreakroomPage extends BasePage {
      */
     async isDisplayed(): Promise<boolean> {
         try {
+            // Check for the "Breakroom" title or the plus button
+            const titleVisible = await this.screenTitle.isDisplayed();
+            if (titleVisible) return true;
             return await this.addBlockButton.isDisplayed();
         } catch {
             return false;

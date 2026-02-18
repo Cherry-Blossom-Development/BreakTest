@@ -8,7 +8,7 @@ import BasePage from './BasePage';
 
 class ChatPage extends BasePage {
     /**
-     * Page elements
+     * Page elements - using accessibility identifiers
      */
     get messageInput() {
         return $('~messageInput');
@@ -19,29 +19,35 @@ class ChatPage extends BasePage {
     }
 
     get messagesList() {
-        return $('~messagesList');
+        return $('-ios predicate string:type == "XCUIElementTypeScrollView"');
     }
 
     get roomTitle() {
-        return $('~roomTitle');
+        // Room title starts with "# "
+        return $('-ios predicate string:type == "XCUIElementTypeStaticText" AND label BEGINSWITH "# "');
     }
 
     get backButton() {
-        return $('~Back');
+        return $('-ios predicate string:type == "XCUIElementTypeButton" AND label == "Back"');
     }
 
     /**
-     * Get all message cells
+     * Get all message cells (static text elements that could be messages)
      */
     get messageCells() {
-        return $$('~messageCell');
+        return $$('-ios predicate string:type == "XCUIElementTypeStaticText"');
     }
 
     /**
      * Wait for chat screen to be visible
      */
     async waitForScreen(timeout: number = 10000): Promise<void> {
-        await this.messageInput.waitForDisplayed({ timeout });
+        // Wait for the message input or room title
+        try {
+            await this.messageInput.waitForDisplayed({ timeout });
+        } catch {
+            await this.roomTitle.waitForDisplayed({ timeout });
+        }
     }
 
     /**
@@ -49,7 +55,7 @@ class ChatPage extends BasePage {
      */
     async isDisplayed(): Promise<boolean> {
         try {
-            return await this.messageInput.isDisplayed();
+            return await this.roomTitle.isDisplayed();
         } catch {
             return false;
         }
@@ -100,6 +106,16 @@ class ChatPage extends BasePage {
     }
 
     /**
+     * Type and send a message quickly (for 30-second demos)
+     */
+    async sendNewMessageFast(message: string): Promise<void> {
+        await this.messageInput.waitForDisplayed();
+        await this.typeSlowly(this.messageInput, message, 20);
+        await browser.pause(200);
+        await this.sendMessage();
+    }
+
+    /**
      * Get the number of visible messages
      */
     async getMessageCount(): Promise<number> {
@@ -138,8 +154,8 @@ class ChatPage extends BasePage {
     /**
      * Refresh messages (pull to refresh)
      */
-    async refreshMessages(): Promise<void> {
-        await this.pullToRefresh();
+    async refreshMessages(waitMs: number = 500): Promise<void> {
+        await this.pullToRefresh(waitMs);
     }
 
     /**

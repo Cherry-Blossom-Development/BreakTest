@@ -8,33 +8,37 @@ import BasePage from './BasePage';
 
 class LoginPage extends BasePage {
     /**
-     * Page elements
+     * Page elements - using text/predicate selectors for compatibility
      */
     get usernameInput() {
-        return $('~usernameField');
+        // Try accessibility ID first, then fall back to placeholder text
+        return $('-ios predicate string:type == "XCUIElementTypeTextField"');
     }
 
     get passwordInput() {
-        return $('~passwordField');
+        return $('-ios predicate string:type == "XCUIElementTypeSecureTextField"');
     }
 
     get loginButton() {
-        return $('~loginButton');
+        // Find button with "Log In" text
+        return $('-ios predicate string:type == "XCUIElementTypeButton" AND label == "Log In"');
     }
 
     get logoImage() {
-        return $('~appLogo');
+        return $('-ios predicate string:type == "XCUIElementTypeImage"');
     }
 
     get errorMessage() {
-        return $('~errorMessage');
+        // Error message is red text - find by type
+        return $('-ios predicate string:type == "XCUIElementTypeStaticText" AND NOT (label == "Log In" OR label == "Handle" OR label == "Password" OR label CONTAINS "Sign Up")');
     }
 
     /**
      * Wait for login screen to be visible
      */
     async waitForScreen(timeout: number = 10000): Promise<void> {
-        await this.loginButton.waitForDisplayed({ timeout });
+        // Wait for the text field (username input) to be visible
+        await this.usernameInput.waitForDisplayed({ timeout });
     }
 
     /**
@@ -71,6 +75,23 @@ class LoginPage extends BasePage {
     }
 
     /**
+     * Dismiss the iOS "Save Password?" dialog if it appears
+     */
+    async dismissSavePasswordDialog(): Promise<void> {
+        try {
+            // Look for "Not Now" button in the save password dialog
+            const notNowButton = await $('-ios predicate string:type == "XCUIElementTypeButton" AND label == "Not Now"');
+            if (await notNowButton.isExisting()) {
+                console.log('Dismissing Save Password dialog...');
+                await notNowButton.click();
+                await this.naturalPause(500);
+            }
+        } catch {
+            // Dialog not present, continue
+        }
+    }
+
+    /**
      * Perform login with natural typing (for demos)
      */
     async loginWithNaturalTyping(username: string, password: string): Promise<void> {
@@ -94,6 +115,40 @@ class LoginPage extends BasePage {
 
         // Tap login button
         await this.loginButton.click();
+        await this.naturalPause(1500);
+
+        // Handle "Save Password?" dialog
+        await this.dismissSavePasswordDialog();
+    }
+
+    /**
+     * Perform login with fast typing (for 30-second demos)
+     */
+    async loginWithFastTyping(username: string, password: string): Promise<void> {
+        console.log(`Logging in as: ${username} (fast)`);
+
+        // Wait for screen
+        await this.usernameInput.waitForDisplayed();
+        await browser.pause(200);
+
+        // Type username quickly
+        await this.typeSlowly(this.usernameInput, username, 25);
+        await browser.pause(150);
+
+        // Type password quickly
+        await this.typeSlowly(this.passwordInput, password, 25);
+        await browser.pause(150);
+
+        // Dismiss keyboard
+        await this.dismissKeyboard();
+        await browser.pause(100);
+
+        // Tap login button
+        await this.loginButton.click();
+        await browser.pause(800);
+
+        // Handle "Save Password?" dialog
+        await this.dismissSavePasswordDialog();
     }
 
     /**

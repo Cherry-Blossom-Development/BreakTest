@@ -1,58 +1,46 @@
 /**
  * Demo User Credentials
  *
- * These users are created in the breakroom_test database
- * specifically for demo recordings.
+ * Dedicated demo users with their own chat rooms.
+ * These users only see demo content, no live user data.
  */
 
 export const DEMO_USERS = {
     // Primary user - the one being recorded/demonstrated
     primary: {
-        handle: 'DemoUser',
-        email: 'demo@test.local',
-        password: 'DemoPass123',
-        firstName: 'Demo',
-        lastName: 'User',
-        salt: 'demosalt_primary_0000000',
+        handle: 'sarah_chen',
+        email: 'sarah.chen@demo.breakroom.app',
+        password: 'Welcome1',
+        firstName: 'Sarah',
+        lastName: 'Chen',
     },
 
     // External users for simulating interactions
-    sarah: {
-        handle: 'Sarah',
-        email: 'sarah@test.local',
-        password: 'DemoPass123',
-        firstName: 'Sarah',
-        lastName: 'Johnson',
-        salt: 'demosalt_sarah_00000000',
-    },
-
     mike: {
-        handle: 'Mike',
-        email: 'mike@test.local',
-        password: 'DemoPass123',
+        handle: 'mike_torres',
+        email: 'mike.torres@demo.breakroom.app',
+        password: 'Welcome1',
         firstName: 'Mike',
-        lastName: 'Chen',
-        salt: 'demosalt_mike_000000000',
+        lastName: 'Torres',
     },
 
-    alex: {
-        handle: 'Alex',
-        email: 'alex@test.local',
-        password: 'DemoPass123',
-        firstName: 'Alex',
-        lastName: 'Rivera',
-        salt: 'demosalt_alex_000000000',
+    emma: {
+        handle: 'emma_wilson',
+        email: 'emma.wilson@demo.breakroom.app',
+        password: 'Welcome1',
+        firstName: 'Emma',
+        lastName: 'Wilson',
     },
 };
 
 export const DEMO_CHAT_ROOMS = {
-    teamChat: {
-        name: 'Team Chat',
-        description: 'Team discussion room',
+    demoTeam: {
+        name: 'Demo Team',
+        description: 'Our team chat for demos',
     },
-    projectUpdates: {
-        name: 'Project Updates',
-        description: 'Project status and updates',
+    coffeeBreak: {
+        name: 'Coffee Break',
+        description: 'Casual conversations',
     },
 };
 

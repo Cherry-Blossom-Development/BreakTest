@@ -9,10 +9,10 @@
  * 5. Send replies
  *
  * Prerequisites:
- * - Demo API running (npm run demo:api:start)
- * - Test database setup (npm run demo:db:setup)
- * - iOS Simulator booted
- * - Demo app installed
+ * - iOS Simulator booted with app installed
+ * - Production database accessible (uses real users)
+ *
+ * Run with: npm run demo:record
  */
 
 import { recorder } from '../services/RecordingService';
@@ -25,25 +25,21 @@ import { DEMO_USERS, DEMO_CHAT_ROOMS } from '../data/demoUsers';
 describe('Demo: Breakroom Navigation and Chat', () => {
     // Track if we started recording (for cleanup)
     let recordingStarted = false;
+    let dbConnected = false;
 
     before(async () => {
         console.log('='.repeat(50));
         console.log('DEMO: Breakroom Navigation and Chat');
         console.log('='.repeat(50));
 
-        // Connect to database for external user simulation
-        await externalUser.connect();
-
-        // Clear and seed chat room with some initial messages
+        // Connect to production database for external user simulation
         try {
-            await externalUser.clearRoomMessages(DEMO_CHAT_ROOMS.teamChat.name);
-            await externalUser.seedRoomWithMessages(DEMO_CHAT_ROOMS.teamChat.name, [
-                { from: 'Sarah', message: 'Good morning team!' },
-                { from: 'Mike', message: 'Hey everyone, ready for the standup?' },
-                { from: 'Sarah', message: 'Yes! Got some updates to share.' },
-            ]);
+            await externalUser.connect();
+            dbConnected = true;
+            console.log('Connected to database for external user simulation');
         } catch (error) {
-            console.log('Note: Could not seed messages (room may not exist yet)');
+            console.log('Note: Could not connect to database. External messages will be skipped.');
+            console.log('Error:', error);
         }
     });
 
@@ -54,7 +50,9 @@ describe('Demo: Breakroom Navigation and Chat', () => {
         }
 
         // Disconnect from database
-        await externalUser.disconnect();
+        if (dbConnected) {
+            await externalUser.disconnect();
+        }
 
         console.log('='.repeat(50));
         console.log('DEMO COMPLETE');
@@ -68,25 +66,39 @@ describe('Demo: Breakroom Navigation and Chat', () => {
         console.log(`Recording to: ${recordingPath}`);
 
         // Give recording a moment to initialize
-        await browser.pause(1000);
+        await browser.pause(500);
 
         try {
             // ============================================
-            // SCENE 1: Login
+            // SCENE 1: Login (if needed)
             // ============================================
             console.log('\n--- Scene 1: Login ---');
 
-            await LoginPage.waitForScreen();
-            await browser.pause(1500); // Let viewer see login screen
+            // Check if we're already logged in (on Breakroom screen)
+            let needsLogin = true;
+            try {
+                const isBreakroomVisible = await BreakroomPage.isDisplayed();
+                if (isBreakroomVisible) {
+                    console.log('Already logged in, skipping login...');
+                    needsLogin = false;
+                }
+            } catch {
+                // Not on Breakroom, need to login
+            }
 
-            // Login with natural typing for demo effect
-            await LoginPage.loginWithNaturalTyping(
-                DEMO_USERS.primary.handle,
-                DEMO_USERS.primary.password
-            );
+            if (needsLogin) {
+                await LoginPage.waitForScreen();
+                await browser.pause(500); // Brief view of login screen
 
-            // Wait for transition to Breakroom
-            await browser.pause(2500);
+                // Login with fast typing
+                await LoginPage.loginWithFastTyping(
+                    DEMO_USERS.primary.handle,
+                    DEMO_USERS.primary.password
+                );
+
+                // Wait for transition to Breakroom
+                await browser.pause(1500);
+            }
 
             // ============================================
             // SCENE 2: Breakroom Overview
@@ -94,83 +106,90 @@ describe('Demo: Breakroom Navigation and Chat', () => {
             console.log('\n--- Scene 2: Breakroom Overview ---');
 
             await BreakroomPage.waitForScreen();
-            await browser.pause(2000); // Let viewer see the breakroom
+            await browser.pause(800); // Brief view of breakroom
 
-            // Browse through blocks
+            // Quick scroll to show content
+            console.log('Scrolling through blocks...');
             await BreakroomPage.scrollDown();
-            await browser.pause(1500);
+            await browser.pause(400);
 
             await BreakroomPage.scrollUp();
-            await browser.pause(1500);
+            await browser.pause(400);
 
             // ============================================
-            // SCENE 3: Expand Chat Block
+            // SCENE 3: Tap on Demo Team chat block
             // ============================================
-            console.log('\n--- Scene 3: Chat Block ---');
+            console.log('\n--- Scene 3: Open Demo Team Chat ---');
 
-            // Tap on chat block to expand it
-            await BreakroomPage.tapChatBlock();
-            await browser.pause(2000);
+            // Look for the Demo Team chat block
+            const demoTeamBlock = await $(`-ios predicate string:type == "XCUIElementTypeStaticText" AND label == "Demo Team"`);
 
-            // Open full chat view
-            await BreakroomPage.openFullChat();
-            await browser.pause(2000);
+            try {
+                await demoTeamBlock.waitForDisplayed({ timeout: 3000 });
+                console.log('Found Demo Team block, tapping...');
+                await demoTeamBlock.click();
+                await browser.pause(800);
 
-            // ============================================
-            // SCENE 4: Chat Interaction
-            // ============================================
-            console.log('\n--- Scene 4: Chat Interaction ---');
+                // ============================================
+                // SCENE 4: Chat Interaction
+                // ============================================
+                console.log('\n--- Scene 4: Chat Interaction ---');
 
-            await ChatPage.waitForScreen();
-            await browser.pause(1500);
+                // Wait for chat screen
+                await ChatPage.waitForScreen();
+                await browser.pause(500);
 
-            // Get current message count
-            const initialCount = await ChatPage.getMessageCount();
+                // External user (Mike) sends a message
+                if (dbConnected) {
+                    console.log('External user (Mike) sending message...');
+                    await externalUser.sendChatMessage(
+                        DEMO_USERS.mike.handle,
+                        DEMO_CHAT_ROOMS.demoTeam.name,
+                        'Hey Sarah! How is the demo going?'
+                    );
 
-            // External user sends a message
-            console.log('External user (Sarah) sending message...');
-            await externalUser.sendChatMessage(
-                'Sarah',
-                DEMO_CHAT_ROOMS.teamChat.name,
-                'Hey! How is the new feature coming along?'
-            );
+                    // Pull to refresh to see new message
+                    await browser.pause(300);
+                    await ChatPage.refreshMessages();
+                    await browser.pause(800);
+                }
 
-            // Refresh to see new message
-            await browser.pause(1000);
-            await ChatPage.refreshMessages();
-            await browser.pause(2000);
+                // Sarah (primary user) sends a reply
+                console.log('Demo user (Sarah) sending reply...');
+                await ChatPage.sendNewMessageFast('Great! Recording now.');
+                await browser.pause(800);
 
-            // Type and send a reply naturally
-            console.log('Demo user sending reply...');
-            await ChatPage.sendNewMessageNaturally(
-                'Going great! Just finishing up the demo recording.'
-            );
-            await browser.pause(2000);
+                // Another external user (Emma) responds
+                if (dbConnected) {
+                    console.log('External user (Emma) sending message...');
+                    await externalUser.sendChatMessage(
+                        DEMO_USERS.emma.handle,
+                        DEMO_CHAT_ROOMS.demoTeam.name,
+                        'Looks fantastic! 🎉'
+                    );
 
-            // Another external user responds
-            console.log('External user (Mike) sending message...');
-            await externalUser.sendChatMessage(
-                'Mike',
-                DEMO_CHAT_ROOMS.teamChat.name,
-                'Awesome! Looking forward to seeing it. 🎉'
-            );
+                    // Pull to refresh
+                    await browser.pause(300);
+                    await ChatPage.refreshMessages();
+                    await browser.pause(1000);
+                }
 
-            // Refresh to see the response
-            await browser.pause(1500);
-            await ChatPage.refreshMessages();
-            await browser.pause(2500);
+                // ============================================
+                // SCENE 5: Navigate Back
+                // ============================================
+                console.log('\n--- Scene 5: Return to Breakroom ---');
 
-            // ============================================
-            // SCENE 5: Navigate Back
-            // ============================================
-            console.log('\n--- Scene 5: Return to Breakroom ---');
+                await ChatPage.goBack();
+                await browser.pause(500);
 
-            await ChatPage.goBack();
-            await browser.pause(2000);
+            } catch (error) {
+                console.log('Could not find Demo Team block, showing Breakroom only');
+                console.log('Error:', error);
+            }
 
             // Final view of Breakroom
             await BreakroomPage.waitForScreen();
-            await browser.pause(2000);
+            await browser.pause(1000);
 
             console.log('\n--- Demo recording complete ---');
 
