@@ -60,6 +60,9 @@ describe('Demo: Breakroom Navigation and Chat', () => {
     });
 
     it('records the full breakroom and chat demo', async () => {
+        const TARGET_DURATION_MS = 30000; // Exactly 30 seconds
+        const startTime = Date.now();
+
         // Start screen recording
         const recordingPath = recorder.startRecording('breakroom-chat-demo');
         recordingStarted = true;
@@ -121,23 +124,26 @@ describe('Demo: Breakroom Navigation and Chat', () => {
             // ============================================
             console.log('\n--- Scene 3: Open Demo Team Chat ---');
 
-            // Look for the Demo Team chat block
-            const demoTeamBlock = await $(`-ios predicate string:type == "XCUIElementTypeStaticText" AND label == "Demo Team"`);
+            // Look for the Demo Team chat block using accessibility identifier
+            const demoTeamBlock = await $('~blockCard_Demo Team');
 
             try {
                 await demoTeamBlock.waitForDisplayed({ timeout: 3000 });
-                console.log('Found Demo Team block, tapping...');
+                console.log('Found Demo Team block, tapping to expand...');
                 await demoTeamBlock.click();
-                await browser.pause(800);
+                await browser.pause(1000); // Wait for accordion to expand
 
                 // ============================================
-                // SCENE 4: Chat Interaction
+                // SCENE 4: Chat Interaction (inline widget)
                 // ============================================
-                console.log('\n--- Scene 4: Chat Interaction ---');
+                console.log('\n--- Scene 4: Chat in Widget ---');
 
-                // Wait for chat screen
-                await ChatPage.waitForScreen();
-                await browser.pause(500);
+                // Find the widget's message input (inline in expanded block)
+                const widgetInput = await $('~widgetMessageInput');
+                const widgetSendBtn = await $('~widgetSendButton');
+
+                await widgetInput.waitForDisplayed({ timeout: 5000 });
+                console.log('Found chat widget input');
 
                 // External user (Mike) sends a message
                 if (dbConnected) {
@@ -147,16 +153,24 @@ describe('Demo: Breakroom Navigation and Chat', () => {
                         DEMO_CHAT_ROOMS.demoTeam.name,
                         'Hey Sarah! How is the demo going?'
                     );
-
-                    // Pull to refresh to see new message
-                    await browser.pause(300);
-                    await ChatPage.refreshMessages();
                     await browser.pause(800);
                 }
 
-                // Sarah (primary user) sends a reply
+                // Sarah (primary user) sends a reply via widget
                 console.log('Demo user (Sarah) sending reply...');
-                await ChatPage.sendNewMessageFast('Great! Recording now.');
+                await widgetInput.click();
+                await browser.pause(200);
+
+                // Type message
+                const message = 'Great! Recording now.';
+                for (const char of message) {
+                    await widgetInput.addValue(char);
+                    await browser.pause(20);
+                }
+                await browser.pause(300);
+
+                // Send
+                await widgetSendBtn.click();
                 await browser.pause(800);
 
                 // Another external user (Emma) responds
@@ -167,37 +181,41 @@ describe('Demo: Breakroom Navigation and Chat', () => {
                         DEMO_CHAT_ROOMS.demoTeam.name,
                         'Looks fantastic! 🎉'
                     );
-
-                    // Pull to refresh
-                    await browser.pause(300);
-                    await ChatPage.refreshMessages();
                     await browser.pause(1000);
                 }
 
-                // ============================================
-                // SCENE 5: Navigate Back
-                // ============================================
-                console.log('\n--- Scene 5: Return to Breakroom ---');
-
-                await ChatPage.goBack();
+                // Collapse the block by tapping header again
+                console.log('\n--- Scene 5: Collapse block ---');
+                await demoTeamBlock.click();
                 await browser.pause(500);
 
             } catch (error) {
-                console.log('Could not find Demo Team block, showing Breakroom only');
+                console.log('Could not interact with Demo Team block');
                 console.log('Error:', error);
             }
 
             // Final view of Breakroom
             await BreakroomPage.waitForScreen();
-            await browser.pause(1000);
 
-            console.log('\n--- Demo recording complete ---');
+            // Calculate remaining time to hit exactly 30 seconds
+            const elapsedMs = Date.now() - startTime;
+            const remainingMs = TARGET_DURATION_MS - elapsedMs;
+
+            if (remainingMs > 0) {
+                console.log(`\nPadding ${(remainingMs / 1000).toFixed(1)}s to reach 30 seconds...`);
+                await browser.pause(remainingMs);
+            } else {
+                console.log(`\nDemo took ${(elapsedMs / 1000).toFixed(1)}s (${((elapsedMs - TARGET_DURATION_MS) / 1000).toFixed(1)}s over target)`);
+            }
+
+            console.log('\n--- Demo recording complete (30 seconds) ---');
 
         } finally {
             // Stop recording
             const savedPath = recorder.stopRecording();
             recordingStarted = false;
-            console.log(`\nRecording saved to: ${savedPath}`);
+            const totalTime = ((Date.now() - startTime) / 1000).toFixed(1);
+            console.log(`\nRecording saved to: ${savedPath} (${totalTime}s)`);
         }
     });
 });

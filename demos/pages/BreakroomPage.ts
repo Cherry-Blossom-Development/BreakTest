@@ -30,17 +30,17 @@ class BreakroomPage extends BasePage {
     }
 
     /**
-     * Get a block card by its title text
+     * Get a block card by its title (using accessibility identifier)
      */
     blockCard(title: string) {
-        return $(`-ios predicate string:type == "XCUIElementTypeStaticText" AND label == "${title}"`);
+        return $(`~blockCard_${title}`);
     }
 
     /**
-     * Get the chat block (look for "Demo Team" chat)
+     * Get the chat block (Demo Team)
      */
     get chatBlock() {
-        return $('-ios predicate string:type == "XCUIElementTypeStaticText" AND label == "Demo Team"');
+        return $('~blockCard_Demo Team');
     }
 
     /**
