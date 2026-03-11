@@ -4,6 +4,7 @@ import TestUsers from '../data/testUsers';
 describe('Breakroom Android - Login', () => {
     beforeEach(async () => {
         await driver.terminateApp('com.cherryblossomdev.breakroom');
+        await driver.execute('mobile: clearApp', { appId: 'com.cherryblossomdev.breakroom' });
         await driver.activateApp('com.cherryblossomdev.breakroom');
         await LoginPage.waitForAppReady();
     });

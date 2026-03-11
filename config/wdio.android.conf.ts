@@ -2,8 +2,10 @@ import path from 'path';
 import dotenv from 'dotenv';
 import BreakroomReporter from '../reporters/BreakroomReporter';
 
+const rootDir = path.resolve(__dirname, '..');
+
 // Load environment variables from .env.test
-dotenv.config({ path: path.join(__dirname, '..', '.env.test') });
+dotenv.config({ path: path.join(rootDir, '.env.test') });
 
 export const config = {
     //
@@ -23,7 +25,9 @@ export const config = {
     // ==================
     // Specify Test Files
     // ==================
-    specs: ['./test/android/**/*.spec.ts'],
+    specs: [
+        path.join(rootDir, 'test', 'android', '**', '*.spec.ts'),
+    ],
     exclude: [],
 
     //
@@ -64,7 +68,7 @@ export const config = {
             'appium',
             {
                 args: {
-                    address: 'localhost',
+                    address: '127.0.0.1',
                     port: 4723,
                 },
                 logPath: './logs',

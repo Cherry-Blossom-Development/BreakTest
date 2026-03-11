@@ -2,39 +2,39 @@ import BasePage from './BasePage';
 
 class SignupPage extends BasePage {
     get handleInput() {
-        return $('~handle-input');
+        return this.rid('handle-input');
     }
 
     get firstNameInput() {
-        return $('~firstname-input');
+        return this.rid('firstname-input');
     }
 
     get lastNameInput() {
-        return $('~lastname-input');
+        return this.rid('lastname-input');
     }
 
     get emailInput() {
-        return $('~email-input');
+        return this.rid('email-input');
     }
 
     get passwordInput() {
-        return $('~password-input');
+        return this.rid('password-input');
     }
 
     get confirmPasswordInput() {
-        return $('~confirm-password-input');
+        return this.rid('confirm-password-input');
     }
 
     get createAccountButton() {
-        return $('~create-account-button');
+        return this.rid('create-account-button');
     }
 
     get errorMessage() {
-        return $('~error-message');
+        return this.rid('error-message');
     }
 
     get loginButton() {
-        return $('~login-button');
+        return this.rid('login-button');
     }
 
     async waitForScreen(timeout = 30000): Promise<void> {

@@ -2,23 +2,23 @@ import BasePage from './BasePage';
 
 class LoginPage extends BasePage {
     get usernameInput() {
-        return $('~username-input');
+        return this.rid('username-input');
     }
 
     get passwordInput() {
-        return $('~password-input');
+        return this.rid('password-input');
     }
 
     get loginButton() {
-        return $('~login-button');
+        return this.rid('login-button');
     }
 
     get errorMessage() {
-        return $('~error-message');
+        return this.rid('error-message');
     }
 
     get signupButton() {
-        return $('~signup-button');
+        return this.rid('signup-button');
     }
 
     async waitForScreen(timeout = 30000): Promise<void> {

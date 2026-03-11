@@ -3,6 +3,20 @@
  */
 export default class BasePage {
     /**
+     * Returns an element located by Android resource-id (from testTag + testTagsAsResourceId)
+     */
+    protected rid(id: string) {
+        return $(`android=new UiSelector().resourceId("${id}")`);
+    }
+
+    /**
+     * Returns all elements with the given Android resource-id
+     */
+    protected rids(id: string) {
+        return $$(`android=new UiSelector().resourceId("${id}")`);
+    }
+
+    /**
      * Waits for an element to be displayed
      * @param selector - The element selector
      * @param timeout - Optional timeout in ms

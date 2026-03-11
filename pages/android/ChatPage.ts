@@ -2,23 +2,23 @@ import BasePage from './BasePage';
 
 class ChatPage extends BasePage {
     get roomList() {
-        return $('~room-list');
+        return this.rid('room-list');
     }
 
     get roomItems() {
-        return $$('~room-item');
+        return this.rids('room-item');
     }
 
     get messageInput() {
-        return $('~message-input');
+        return this.rid('message-input');
     }
 
     get sendButton() {
-        return $('~send-button');
+        return this.rid('send-button');
     }
 
     get messageList() {
-        return $('~message-list');
+        return this.rid('message-list');
     }
 
     async waitForRoomList(timeout = 30000): Promise<void> {
