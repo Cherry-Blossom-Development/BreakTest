@@ -38,7 +38,7 @@ export const config = {
             'appium:platformVersion': process.env.PLATFORM_VERSION || '14',
             'appium:automationName': 'UiAutomator2',
             'appium:app': process.env.APP_PATH || path.resolve('./apps/breakroom.apk'),
-            'appium:appPackage': 'com.example.breakroom',
+            'appium:appPackage': 'com.cherryblossomdev.breakroom',
             'appium:appActivity': '.MainActivity',
             'appium:noReset': false,
             'appium:fullReset': false,
