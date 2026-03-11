@@ -53,10 +53,10 @@ describe('Breakroom Web - Signup', () => {
             testUser.password
         );
 
-        // Wait for redirect to /welcome (auto-login after signup)
+        // Wait for redirect to /breakroom (auto-login after signup)
         await browser.waitUntil(
-            async () => (await browser.getUrl()).includes('/welcome'),
-            { timeout: 10000, timeoutMsg: 'Expected redirect to /welcome after signup' }
+            async () => (await browser.getUrl()).includes('/breakroom'),
+            { timeout: 10000, timeoutMsg: 'Expected redirect to /breakroom after signup' }
         );
 
         // Get verification email from test file
@@ -118,9 +118,8 @@ describe('Breakroom Web - Signup', () => {
         // Wait for form to load
         await $('form').waitForExist({ timeout: 10000 });
 
-        // Verify submit button exists and is clickable
+        // Verify submit button exists (disabled on empty form by design via isFormValid)
         const submitButton = await $('button[type="submit"]');
         await expect(submitButton).toBeExisting();
-        await expect(submitButton).toBeClickable();
     });
 });

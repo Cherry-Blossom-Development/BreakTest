@@ -3,6 +3,7 @@ import TestUsers from '../data/testUsers';
 
 describe('Breakroom Web - Login', () => {
     beforeEach(async () => {
+        await browser.deleteCookies();
         await LoginPage.open();
     });
 
