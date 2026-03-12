@@ -26,7 +26,7 @@ describe('Breakroom Web - Signup', () => {
         // Wait for inputs to be available
         await browser.waitUntil(
             async () => {
-                const inputs = await $$('form input[type="text"]');
+                const inputs = [...await $$('form input[type="text"]')];
                 return inputs.length >= 4;
             },
             { timeout: 10000, timeoutMsg: 'Expected 4 text inputs on signup form' }
@@ -71,7 +71,7 @@ describe('Breakroom Web - Signup', () => {
         await browser.pause(3000);
 
         // Check what's on the page for debugging
-        const h2Elements = await $$('h2');
+        const h2Elements = [...await $$('h2')];
         let headingText = '';
         if (h2Elements.length > 0) {
             headingText = await h2Elements[0].getText();
