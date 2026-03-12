@@ -3,7 +3,7 @@ import WDIOReporter, { RunnerStats, SuiteStats, TestStats } from '@wdio/reporter
 interface BreakroomReporterOptions {
     apiUrl?: string;
     apiKey?: string;
-    platform?: 'web' | 'android';
+    platform?: 'web' | 'android' | 'ios';
     environment?: string;
     [key: string]: unknown;
 }
@@ -27,7 +27,7 @@ interface SuiteResultData {
 export default class BreakroomReporter extends WDIOReporter {
     private apiUrl: string;
     private apiKey: string;
-    private platform: 'web' | 'android';
+    private platform: 'web' | 'android' | 'ios';
     private environment: string;
     private collectedSuites: Map<string, SuiteResultData> = new Map();
     private currentSuiteId: string | null = null;
@@ -39,9 +39,9 @@ export default class BreakroomReporter extends WDIOReporter {
         super(options as any);
 
         // Load from options or environment variables
-        this.apiUrl = options.apiUrl || process.env.BREAKROOM_API_URL || 'https://local.prosaurus.com/api/test-results';
+        this.apiUrl = options.apiUrl || process.env.BREAKROOM_API_URL || 'https://www.prosaurus.com/api/test-results';
         this.apiKey = options.apiKey || process.env.BREAKROOM_TEST_API_KEY || '';
-        this.platform = options.platform || (process.env.TEST_PLATFORM as 'web' | 'android') || 'web';
+        this.platform = options.platform || (process.env.TEST_PLATFORM as 'web' | 'android' | 'ios') || 'web';
         this.environment = options.environment || process.env.TEST_ENVIRONMENT || 'local';
 
         // Try to get git info

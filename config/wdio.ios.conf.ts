@@ -2,8 +2,10 @@ import path from 'path';
 import dotenv from 'dotenv';
 import BreakroomReporter from '../reporters/BreakroomReporter';
 
+const rootDir = path.resolve(__dirname, '..');
+
 // Load environment variables from .env.test
-dotenv.config({ path: path.join(__dirname, '..', '.env.test') });
+dotenv.config({ path: path.join(rootDir, '.env.test') });
 
 export const config = {
     //
@@ -23,7 +25,9 @@ export const config = {
     // ==================
     // Specify Test Files
     // ==================
-    specs: ['./test/ios/**/*.spec.ts'],
+    specs: [
+        path.join(rootDir, 'test', 'ios', '**', '*.spec.ts'),
+    ],
     exclude: [],
 
     //
@@ -34,14 +38,24 @@ export const config = {
     capabilities: [
         {
             platformName: 'iOS',
-            'appium:deviceName': process.env.DEVICE_NAME || 'iPhone 15',
-            'appium:platformVersion': process.env.PLATFORM_VERSION || '17.0',
+            'appium:deviceName': process.env.DEVICE_NAME || 'iPhone 17',
+            'appium:platformVersion': process.env.PLATFORM_VERSION || '26.2',
             'appium:automationName': 'XCUITest',
-            'appium:app': process.env.APP_PATH || path.resolve('./apps/breakroom.app'),
-            'appium:bundleId': 'com.example.breakroom',
+            'appium:app': process.env.APP_PATH || path.resolve('./apps/Breakroom.app'),
+            'appium:bundleId': 'com.cherryblossomdev.Breakroom',
             'appium:noReset': false,
             'appium:fullReset': false,
             'appium:newCommandTimeout': 240,
+            // Pass test configuration via launch arguments
+            // Format: -KEY VALUE sets UserDefaults.standard.object(forKey: "KEY")
+            'appium:processArguments': {
+                args: [
+                    '-TEST_API_URL',
+                    process.env.TEST_API_URL || 'http://localhost:3001',
+                    '-CLEAR_AUTH_STATE',
+                    'YES',
+                ],
+            },
         },
     ],
 
@@ -58,18 +72,9 @@ export const config = {
     //
     // Appium Service
     // ==============
-    services: [
-        [
-            'appium',
-            {
-                args: {
-                    address: 'localhost',
-                    port: 4723,
-                },
-                logPath: './logs',
-            },
-        ],
-    ],
+    // Appium should be started manually before running tests:
+    // npx appium --base-path / --address localhost --port 4723
+    services: [],
     port: 4723,
 
     //
