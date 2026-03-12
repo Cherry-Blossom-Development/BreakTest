@@ -57,6 +57,7 @@
     "@wdio/types": "^9.23.2",
     "allure-commandline": "^2.36.0",
     "appium": "^3.1.2",
+    "appium-xcuitest-driver": "^10.26.0",
     "chromedriver": "^144.0.0",
     "expect-webdriverio": "^5.6.3",
     "ts-node": "^10.9.2",
