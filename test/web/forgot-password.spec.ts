@@ -50,6 +50,10 @@ describe('Breakroom Web - Forgot Password', () => {
 
         await browser.pause(1000);
 
+        // Submit with the invalid token — the API returns 400 which triggers the error block
+        await ResetPasswordPage.resetPassword('SomePass123', 'SomePass123');
+
+        await ResetPasswordPage.invalidTokenBlock.waitForExist({ timeout: 10000 });
         await expect(ResetPasswordPage.invalidTokenBlock).toBeExisting();
     });
 

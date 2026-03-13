@@ -30,6 +30,10 @@ class ResetPasswordPage extends BasePage {
     }
 
     async resetPassword(password: string, confirmPassword: string): Promise<void> {
+        await browser.waitUntil(
+            async () => [...await $$('form input[type="password"]')].length >= 2,
+            { timeout: 10000, timeoutMsg: 'Expected 2 password inputs on reset form' }
+        );
         const inputs = [...await $$('form input[type="password"]')];
         await inputs[0].setValue(password);
         await inputs[1].setValue(confirmPassword);

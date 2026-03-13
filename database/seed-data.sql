@@ -69,7 +69,9 @@ INSERT INTO chat_rooms (name, description) VALUES
 -- System Email Templates
 INSERT INTO system_emails (email_key, from_address, subject, html_content) VALUES
   ('signup_verification', 'noreply@prosaurus.com', 'Verify your Breakroom account',
-   '<h1>Welcome to Breakroom!</h1><p>Please verify your email by clicking the link below:</p><p><a href="https://local.prosaurus.com/verify?token={{verification_token}}">Verify Email</a></p>');
+   '<h1>Welcome to Breakroom!</h1><p>Please verify your email by clicking the link below:</p><p><a href="https://local.prosaurus.com/verify?token={{verification_token}}">Verify Email</a></p>'),
+  ('password_reset', 'noreply@prosaurus.com', 'Reset Your Breakroom Password',
+   '<p>Click the link to reset your password: <a href="https://local.prosaurus.com/reset-password?token={{reset_token}}">Reset Password</a></p>');
 
 -- ======================
 -- Test Users
