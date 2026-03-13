@@ -21,6 +21,10 @@ class LoginPage extends BasePage {
         return this.aid('signupButton');
     }
 
+    get forgotPasswordButton() {
+        return this.aid('forgotPasswordButton');
+    }
+
     get appLogo() {
         return this.aid('appLogo');
     }
@@ -56,6 +60,10 @@ class LoginPage extends BasePage {
 
     async goToSignup(): Promise<void> {
         await this.signupButton.click();
+    }
+
+    async goToForgotPassword(): Promise<void> {
+        await this.forgotPasswordButton.click();
     }
 }
 
