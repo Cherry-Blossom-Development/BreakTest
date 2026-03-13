@@ -57,6 +57,41 @@ export function clearTestEmail(email: string): void {
 }
 
 /**
+ * Gets a password reset email by email address, waiting for it to appear.
+ * Reset emails are written as reset-${email}.json by the backend.
+ * @param email - The email address to look for
+ * @param timeout - Max time to wait in ms (default 10000)
+ */
+export async function getResetEmail(
+    email: string,
+    timeout: number = 10000
+): Promise<TestEmail> {
+    const filePath = path.join(TEST_EMAIL_DIR, `reset-${email}.json`);
+    const startTime = Date.now();
+
+    while (Date.now() - startTime < timeout) {
+        if (fs.existsSync(filePath)) {
+            const content = fs.readFileSync(filePath, 'utf8');
+            return JSON.parse(content);
+        }
+        await new Promise(resolve => setTimeout(resolve, 500));
+    }
+
+    throw new Error(`Reset email for ${email} not found within ${timeout}ms`);
+}
+
+/**
+ * Clears a specific password reset email file
+ * @param email - The email address to clear
+ */
+export function clearResetEmail(email: string): void {
+    const filePath = path.join(TEST_EMAIL_DIR, `reset-${email}.json`);
+    if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+    }
+}
+
+/**
  * Clears all test email files
  */
 export function clearAllTestEmails(): void {
