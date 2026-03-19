@@ -132,3 +132,24 @@ SELECT id, handle, CONCAT(handle, '''s Blog') FROM users WHERE handle IN ('testa
 
 -- Set bio for test users (bio column is on users table)
 UPDATE users SET bio = 'Test user for automated testing' WHERE handle IN ('testadmin', 'testuser', 'testunverified');
+
+-- ======================
+-- EULA System Data
+-- ======================
+
+-- Event type for EULA acceptance requirement
+INSERT INTO event_types (type, description) VALUES
+  ('eula_required', 'User must accept the EULA before using the service');
+
+-- Notification type linked to the EULA event
+INSERT INTO notification_types (name, description, display_type, event_id, repeat_rule, is_active)
+SELECT 'EULA Acceptance Required', 'Please accept the End User License Agreement to continue.', 'popup', id, 'once', 1
+FROM event_types WHERE type = 'eula_required';
+
+-- Pre-accept EULA for test users so they are not blocked by the EULA screen during tests
+INSERT INTO notifications (notif_id, user_id, status)
+SELECT nt.id, u.id, 'dismissed'
+FROM notification_types nt
+JOIN event_types et ON nt.event_id = et.id
+JOIN users u ON u.handle IN ('testadmin', 'testuser')
+WHERE et.type = 'eula_required';

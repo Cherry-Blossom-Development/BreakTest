@@ -31,6 +31,7 @@ class LoginPage extends BasePage {
         await this.passwordInput.setValue(password);
         await this.hideKeyboard();
         await this.loginButton.click();
+        await this.dismissEulaIfPresent();
     }
 
     async isDisplayed(): Promise<boolean> {

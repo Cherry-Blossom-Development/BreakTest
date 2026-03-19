@@ -91,4 +91,25 @@ export default class BasePage {
     async goBack(): Promise<void> {
         await driver.back();
     }
+
+    /**
+     * Accepts the EULA if the acceptance screen is currently showing.
+     * After login, test users may be routed to EulaScreen if they haven't
+     * accepted yet. This taps "Accept These Terms" and waits for the button
+     * to disappear before continuing.
+     */
+    async dismissEulaIfPresent(timeout = 8000): Promise<void> {
+        try {
+            const acceptBtn = $('android=new UiSelector().resourceId("eula-accept-button")');
+            const displayed = await acceptBtn.waitForDisplayed({ timeout, reverse: false });
+            if (displayed) {
+                await acceptBtn.click();
+                // Wait for the button to disappear (navigates to home)
+                await acceptBtn.waitForDisplayed({ timeout: 10000, reverse: true });
+                await driver.pause(1000);
+            }
+        } catch {
+            // EULA screen not present — nothing to do
+        }
+    }
 }
