@@ -30,23 +30,23 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
-# ─── Paths ────────────────────────────────────────────────────────────────────
+# --- Paths ---
 $BreakTestDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $BreakroomDir = Resolve-Path "$BreakTestDir\..\Breakroom"
 $AndroidDir   = Resolve-Path "$BreakTestDir\..\Android"
-if     ($env:ANDROID_HOME)    { $AndroidSdk = $env:ANDROID_HOME }
+if     ($env:ANDROID_HOME)     { $AndroidSdk = $env:ANDROID_HOME }
 elseif ($env:ANDROID_SDK_ROOT) { $AndroidSdk = $env:ANDROID_SDK_ROOT }
 else                           { $AndroidSdk = "$env:LOCALAPPDATA\Android\Sdk" }
-$EmulatorExe  = "$AndroidSdk\emulator\emulator.exe"
-$AdbExe       = "$AndroidSdk\platform-tools\adb.exe"
-$ApkBuilt     = "$AndroidDir\app\build\outputs\apk\debug\app-debug.apk"
-$ApkDeploy    = "$BreakTestDir\apps\breakroom.apk"
-$AppPackage   = "com.cherryblossomdev.breakroom"
+$EmulatorExe = "$AndroidSdk\emulator\emulator.exe"
+$AdbExe      = "$AndroidSdk\platform-tools\adb.exe"
+$ApkBuilt    = "$AndroidDir\app\build\outputs\apk\debug\app-debug.apk"
+$ApkDeploy   = "$BreakTestDir\apps\breakroom.apk"
+$AppPackage  = "com.cherryblossomdev.breakroom"
 
-# ─── Output helpers ───────────────────────────────────────────────────────────
+# --- Output helpers ---
 function Write-Step([string]$msg) {
     Write-Host ""
-    Write-Host "─── $msg" -ForegroundColor Cyan
+    Write-Host "--- $msg ---" -ForegroundColor Cyan
 }
 function Write-OK([string]$msg)   { Write-Host "  [ OK ]  $msg" -ForegroundColor Green  }
 function Write-Info([string]$msg) { Write-Host "  [ .. ]  $msg" -ForegroundColor Yellow }
@@ -66,13 +66,13 @@ function Wait-ForPort {
     exit 1
 }
 
-# ──────────────────────────────────────────────────────────────────────────────
+# ------------------------------------------------------------------------------
 Write-Host ""
-Write-Host "══════════════════════════════════════════" -ForegroundColor Cyan
+Write-Host "==========================================" -ForegroundColor Cyan
 Write-Host "   Breakroom Android E2E Test Runner      " -ForegroundColor Cyan
-Write-Host "══════════════════════════════════════════" -ForegroundColor Cyan
+Write-Host "==========================================" -ForegroundColor Cyan
 
-# ─── 1. Docker ────────────────────────────────────────────────────────────────
+# --- 1. Docker ---
 Write-Step "1/6  Docker"
 
 $dockerReady = $false
@@ -84,7 +84,7 @@ try {
 if ($dockerReady) {
     Write-OK "Docker daemon is running"
 } else {
-    Write-Info "Docker not responding — starting Docker Desktop..."
+    Write-Info "Docker not responding - starting Docker Desktop..."
 
     $desktopExe = @(
         "C:\Program Files\Docker\Docker\Docker Desktop.exe",
@@ -114,7 +114,7 @@ if ($dockerReady) {
     Write-OK "Docker is ready"
 }
 
-# ─── 2. Test containers ───────────────────────────────────────────────────────
+# --- 2. Test containers ---
 Write-Step "2/6  Breakroom test containers (port 3001)"
 
 $backendUp = Test-NetConnection -ComputerName 127.0.0.1 -Port 3001 `
@@ -134,15 +134,15 @@ if ($backendUp) {
     Wait-ForPort -Port 3001 -Label "test backend" -TimeoutSec 120
 }
 
-# ─── 3. Android emulator ──────────────────────────────────────────────────────
+# --- 3. Android emulator ---
 Write-Step "3/6  Android emulator"
 
 if (-not (Test-Path $EmulatorExe)) {
-    Write-Fail "Android emulator not found at:`n    $EmulatorExe`n  Set ANDROID_HOME to your SDK path."
+    Write-Fail "Android emulator not found at: $EmulatorExe`n  Set ANDROID_HOME to your SDK path."
     exit 1
 }
 if (-not (Test-Path $AdbExe)) {
-    Write-Fail "ADB not found at:`n    $AdbExe"
+    Write-Fail "ADB not found at: $AdbExe"
     exit 1
 }
 
@@ -150,9 +150,8 @@ $adbOut = & $AdbExe devices 2>&1
 $runningEmulator = $adbOut | Where-Object { $_ -match "^emulator-\d+\s+device$" }
 
 if ($runningEmulator) {
-    Write-OK "Emulator already running: $($runningEmulator.Trim())"
+    Write-OK "Emulator already running: $($runningEmulator | Select-Object -First 1)"
 } else {
-    # Pick the first AVD that matches Pixel_7, or just the first one available
     $avdList = (& $EmulatorExe -list-avds 2>&1) | Where-Object { $_.Trim() -ne "" }
     $avd = $avdList | Where-Object { $_ -match "Pixel_7" } | Select-Object -First 1
     if (-not $avd) { $avd = $avdList | Select-Object -First 1 }
@@ -164,7 +163,6 @@ if ($runningEmulator) {
     Write-Info "Starting AVD: $($avd.Trim())"
     Start-Process -FilePath $EmulatorExe -ArgumentList "-avd `"$($avd.Trim())`"" -WindowStyle Minimized
 
-    # Wait for ADB to see the device
     Write-Info "Waiting for emulator to connect to ADB..."
     $sw = [System.Diagnostics.Stopwatch]::StartNew()
     while ($sw.Elapsed.TotalSeconds -lt 60) {
@@ -173,7 +171,6 @@ if ($runningEmulator) {
         if ($adbOut | Where-Object { $_ -match "^emulator-\d+" }) { break }
     }
 
-    # Wait for full boot
     Write-Info "Waiting for boot to complete (may take 1-2 minutes)..."
     $sw = [System.Diagnostics.Stopwatch]::StartNew()
     $booted = $false
@@ -187,12 +184,11 @@ if ($runningEmulator) {
         exit 1
     }
 
-    # Brief settle so the launcher is interactive
     Start-Sleep 3
     Write-OK "Emulator is running and booted"
 }
 
-# ─── 4. Android build ─────────────────────────────────────────────────────────
+# --- 4. Android build ---
 Write-Step "4/6  Android app environment"
 
 $activeProps = "$AndroidDir\environments\active.properties"
@@ -238,14 +234,13 @@ if ($switched -or $ForceRebuild) {
     Copy-Item $ApkBuilt $ApkDeploy -Force
     Write-OK "APK installed and copied to BreakTest/apps/"
 } else {
-    # Verify the app is actually on the device; install from last build if not
     $installed = (& $AdbExe shell pm list packages 2>&1) | Where-Object { $_ -match $AppPackage }
     if (-not $installed) {
         if (-not (Test-Path $ApkBuilt)) {
-            Write-Fail "App is not installed and no APK was found at:`n    $ApkBuilt`n  Run with -ForceRebuild to build it."
+            Write-Fail "App not installed and no APK found at: $ApkBuilt`n  Run with -ForceRebuild to build it."
             exit 1
         }
-        Write-Info "App not installed on emulator — installing existing APK..."
+        Write-Info "App not installed on emulator - installing existing APK..."
         & $AdbExe install -r $ApkBuilt
         Copy-Item $ApkBuilt $ApkDeploy -Force
         Write-OK "APK installed"
@@ -254,7 +249,7 @@ if ($switched -or $ForceRebuild) {
     }
 }
 
-# ─── 5. Test database ─────────────────────────────────────────────────────────
+# --- 5. Test database ---
 Write-Step "5/6  Test database"
 
 if ($SkipDbSetup) {
@@ -272,7 +267,7 @@ if ($SkipDbSetup) {
     Write-OK "Test database reset successfully"
 }
 
-# ─── 6. Run tests ─────────────────────────────────────────────────────────────
+# --- 6. Run tests ---
 Write-Step "6/6  Running tests"
 Write-Host ""
 
@@ -281,17 +276,17 @@ npm run test:android
 $testExit = $LASTEXITCODE
 Pop-Location
 
-# ─── Summary ──────────────────────────────────────────────────────────────────
+# --- Summary ---
 Write-Host ""
-Write-Host "══════════════════════════════════════════" -ForegroundColor Cyan
+Write-Host "==========================================" -ForegroundColor Cyan
 if ($testExit -eq 0) {
     Write-Host "  All tests passed!" -ForegroundColor Green
 } else {
     Write-Host "  Tests finished with failures (exit $testExit)" -ForegroundColor Red
 }
-Write-Host "══════════════════════════════════════════" -ForegroundColor Cyan
+Write-Host "==========================================" -ForegroundColor Cyan
 Write-Host ""
-Write-Host "  Restore production build:  cd ..\Android && .\restore-production.ps1" -ForegroundColor DarkGray
+Write-Host "  Restore production:  cd ..\Android && .\restore-production.ps1" -ForegroundColor DarkGray
 Write-Host ""
 
 exit $testExit
