@@ -1,4 +1,4 @@
-import WDIOReporter, { RunnerStats, SuiteStats, TestStats } from '@wdio/reporter';
+import WDIOReporter, { HookStats, RunnerStats, SuiteStats, TestStats } from '@wdio/reporter';
 
 interface BreakroomReporterOptions {
     apiUrl?: string;
@@ -109,6 +109,25 @@ export default class BreakroomReporter extends WDIOReporter {
         this.addTestResult(test, 'skipped');
     }
 
+    onHookEnd(hook: HookStats): void {
+        // Record failed before()/after() hooks as a synthetic test result so the
+        // suite shows up even when no individual tests ever ran
+        if (!hook.error && !(hook.errors && hook.errors.length > 0)) return;
+        if (!this.currentSuiteId) return;
+        const suite = this.collectedSuites.get(this.currentSuiteId);
+        if (!suite) return;
+
+        const errorMessage = hook.errors?.[0]?.message || hook.error?.message;
+        const errorStack = hook.errors?.[0]?.stack || hook.error?.stack;
+        suite.tests.push({
+            name: `[hook] ${hook.title || 'before/after'}`,
+            status: 'failed',
+            duration_ms: hook.duration,
+            error_message: errorMessage,
+            error_stack: errorStack
+        });
+    }
+
     private addTestResult(
         test: TestStats,
         status: 'passed' | 'failed' | 'skipped',
@@ -143,7 +162,7 @@ export default class BreakroomReporter extends WDIOReporter {
 
     onRunnerEnd(runner: RunnerStats): void {
         // Convert suites map to array
-        const suitesArray = Array.from(this.collectedSuites.values()).filter(s => s.tests.length > 0);
+        const suitesArray = Array.from(this.collectedSuites.values());
 
         if (suitesArray.length === 0) {
             console.log('[BreakroomReporter] No test results to report');
