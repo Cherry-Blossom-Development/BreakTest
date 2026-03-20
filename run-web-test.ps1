@@ -60,10 +60,8 @@ Write-Host "==========================================" -ForegroundColor Cyan
 Write-Step "1/4  Docker"
 
 $dockerReady = $false
-try {
-    $null = docker info 2>&1
-    $dockerReady = ($LASTEXITCODE -eq 0)
-} catch {}
+docker info 2>$null | Out-Null
+$dockerReady = ($LASTEXITCODE -eq 0)
 
 if ($dockerReady) {
     Write-OK "Docker daemon is running"
@@ -84,13 +82,11 @@ if ($dockerReady) {
     Write-Info "Waiting for Docker daemon (up to 90s)..."
     $sw = [System.Diagnostics.Stopwatch]::StartNew()
     while ($sw.Elapsed.TotalSeconds -lt 90) {
+        docker info 2>$null | Out-Null
+        if ($LASTEXITCODE -eq 0) { break }
         Start-Sleep 5
-        try {
-            $null = docker info 2>&1
-            if ($LASTEXITCODE -eq 0) { break }
-        } catch {}
     }
-    $null = docker info 2>&1
+    docker info 2>$null | Out-Null
     if ($LASTEXITCODE -ne 0) {
         Write-Fail "Docker daemon did not start in time. Start Docker Desktop manually and retry."
         exit 1
