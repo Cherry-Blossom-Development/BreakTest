@@ -30,14 +30,9 @@ describe('Breakroom iOS - Login', () => {
 
     it('should show error with invalid credentials', async () => {
         await LoginPage.login(TestUsers.invalid.handle, TestUsers.invalid.password);
-
         await driver.pause(3000);
-
-        // Should still be on login screen
         const isDisplayed = await LoginPage.isDisplayed();
         expect(isDisplayed).toBe(true);
-
-        // Should show an error message
         const errorText = await LoginPage.getErrorMessage();
         expect(errorText.length).toBeGreaterThan(0);
     });
@@ -54,19 +49,14 @@ describe('Breakroom iOS - Login', () => {
 
     it('should login successfully with admin credentials', async () => {
         await LoginPage.login(TestUsers.admin.handle, TestUsers.admin.password);
-
         await driver.pause(5000);
-
         const isLoginDisplayed = await LoginPage.isDisplayed();
         expect(isLoginDisplayed).toBe(false);
     });
 
     it('should navigate to signup screen', async () => {
         await LoginPage.goToSignup();
-
         await driver.pause(2000);
-
-        // Login screen should no longer be shown
         const isLoginDisplayed = await LoginPage.isDisplayed();
         expect(isLoginDisplayed).toBe(false);
     });

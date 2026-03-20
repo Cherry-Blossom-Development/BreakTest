@@ -35,10 +35,32 @@ class LoginPage extends BasePage {
 
     async login(username: string, password: string): Promise<void> {
         await this.waitForScreen();
-        await this.usernameInput.setValue(username);
-        await this.passwordInput.setValue(password);
-        await this.hideKeyboard();
-        await this.loginButton.click();
+
+        // Click and type username using setValue
+        const usernameEl = await this.usernameInput;
+        await usernameEl.click();
+        await driver.pause(300);
+        await usernameEl.setValue(username);
+        await driver.pause(300);
+
+        // Click and type password using setValue
+        const passwordEl = await this.passwordInput;
+        await passwordEl.click();
+        await driver.pause(300);
+        await passwordEl.setValue(password);
+        await driver.pause(300);
+
+        // Dismiss keyboard to ensure SwiftUI bindings update
+        try {
+            await driver.hideKeyboard();
+        } catch {
+            // Keyboard might not be showing
+        }
+        await driver.pause(500);
+
+        // Click login button
+        const loginBtn = await this.loginButton;
+        await loginBtn.click();
     }
 
     async isDisplayed(): Promise<boolean> {

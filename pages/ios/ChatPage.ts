@@ -14,7 +14,7 @@ class ChatPage extends BasePage {
     }
 
     get chatTab() {
-        // The tab bar button uses the SF Symbol name as its identifier
+        // Use the SF Symbol name for the tab bar button
         return this.aid('bubble.left.and.bubble.right');
     }
 

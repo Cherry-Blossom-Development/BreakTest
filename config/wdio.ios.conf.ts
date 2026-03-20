@@ -34,11 +34,14 @@ export const config = {
     // ============
     // Capabilities
     // ============
+    // Run tests sequentially - only one spec file at a time
+    // This is necessary because all tests share the same iOS simulator
     maxInstances: 1,
+    maxInstancesPerCapability: 1,
     capabilities: [
         {
             platformName: 'iOS',
-            'appium:deviceName': process.env.DEVICE_NAME || 'iPhone 17',
+            'appium:deviceName': process.env.DEVICE_NAME || 'iPhone 17 Pro',
             'appium:platformVersion': process.env.PLATFORM_VERSION || '26.2',
             'appium:automationName': 'XCUITest',
             'appium:app': process.env.APP_PATH || path.resolve('./apps/Breakroom.app'),
