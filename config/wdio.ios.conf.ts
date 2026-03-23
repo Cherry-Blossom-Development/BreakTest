@@ -4,8 +4,9 @@ import BreakroomReporter from '../reporters/BreakroomReporter';
 
 const rootDir = path.resolve(__dirname, '..');
 
-// Load environment variables from .env.test
-dotenv.config({ path: path.join(rootDir, '.env.test') });
+// Load environment variables — TEST_ENV selects the target environment (dev | production)
+const testEnv = process.env.TEST_ENV || 'dev';
+dotenv.config({ path: path.join(rootDir, `.env.test.${testEnv}`) });
 
 export const config = {
     //
@@ -54,7 +55,7 @@ export const config = {
             'appium:processArguments': {
                 args: [
                     '-TEST_API_URL',
-                    process.env.TEST_API_URL || 'http://localhost:3001',
+                    process.env.TEST_API_URL || (testEnv === 'production' ? 'https://www.prosaurus.com' : 'https://dev.prosaurus.com'),
                     '-CLEAR_AUTH_STATE',
                     'YES',
                 ],

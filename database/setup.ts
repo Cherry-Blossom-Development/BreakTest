@@ -15,8 +15,15 @@ import * as path from 'path';
 import * as crypto from 'crypto';
 import dotenv from 'dotenv';
 
-// Load environment variables
-dotenv.config({ path: path.join(__dirname, '..', '.env.test') });
+// Load environment variables from the target environment's config file
+const testEnv = process.env.TEST_ENV || 'dev';
+const envFile = path.join(__dirname, '..', `.env.test.${testEnv}`);
+if (fs.existsSync(envFile)) {
+    dotenv.config({ path: envFile });
+} else {
+    // Fall back to .env.test for backward compatibility
+    dotenv.config({ path: path.join(__dirname, '..', '.env.test') });
+}
 
 // Test user credentials - these are used in tests
 export const TEST_USERS = {
@@ -163,7 +170,25 @@ async function setupDatabase(): Promise<void> {
         const [rooms] = await connection.query('SELECT name FROM chat_rooms');
         console.log('Chat rooms created:', (rooms as any[]).map(r => r.name).join(', '));
 
+        // Record that the DB has been set up for this environment
+        const statePath = path.join(__dirname, '.db-state.json');
+        const state = {
+            configured_for: testEnv,
+            source_db: process.env.SOURCE_DB_NAME || null,
+            schema_synced_at: null as string | null,
+            db_setup_at: new Date().toISOString(),
+        };
+        if (fs.existsSync(statePath)) {
+            try {
+                const existing = JSON.parse(fs.readFileSync(statePath, 'utf8'));
+                state.schema_synced_at = existing.schema_synced_at || null;
+                state.source_db = existing.source_db || state.source_db;
+            } catch { /* ignore */ }
+        }
+        fs.writeFileSync(statePath, JSON.stringify(state, null, 2), 'utf8');
+
         console.log('\nTest database setup complete!');
+        console.log(`Configured for: ${testEnv}`);
         console.log(`\nTest credentials:`);
         console.log(`  Admin:    ${TEST_USERS.admin.handle} / ${TEST_USERS.admin.password}`);
         console.log(`  Standard: ${TEST_USERS.standard.handle} / ${TEST_USERS.standard.password}`);

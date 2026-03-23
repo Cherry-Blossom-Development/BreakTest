@@ -4,8 +4,9 @@ import BreakroomReporter from '../reporters/BreakroomReporter';
 
 const rootDir = path.resolve(__dirname, '..');
 
-// Load environment variables from .env.test
-dotenv.config({ path: path.join(rootDir, '.env.test') });
+// Load environment variables — TEST_ENV selects the target environment (dev | production)
+const testEnv = process.env.TEST_ENV || 'dev';
+dotenv.config({ path: path.join(rootDir, `.env.test.${testEnv}`) });
 
 export const config = {
     //
@@ -41,7 +42,9 @@ export const config = {
             'appium:deviceName': process.env.DEVICE_NAME || 'Pixel_7_API_34',
             'appium:platformVersion': process.env.PLATFORM_VERSION || '14',
             'appium:automationName': 'UiAutomator2',
-            'appium:app': process.env.APP_PATH || path.resolve('./apps/breakroom.apk'),
+            'appium:app': process.env.APP_PATH || path.resolve(
+                testEnv === 'production' ? './apps/breakroom-productionTest.apk' : './apps/breakroom-dev.apk'
+            ),
             'appium:appPackage': 'com.cherryblossomdev.breakroom',
             'appium:appActivity': '.MainActivity',
             'appium:noReset': false,

@@ -1,10 +1,11 @@
 /**
- * Production to Test Schema Sync Script
+ * Schema Sync Script
  *
- * This script extracts the schema from the production database and generates
+ * Extracts the schema from a source database (dev or production) and generates
  * a new schema.sql file for the test database, excluding blacklisted tables.
  *
- * Usage: npx ts-node database/sync-schema.ts
+ * Usage: TEST_ENV=dev npx ts-node database/sync-schema.ts
+ *        TEST_ENV=production npx ts-node database/sync-schema.ts
  *
  * Options:
  *   --dry-run    Show what would be generated without writing files
@@ -16,8 +17,15 @@ import * as fs from 'fs';
 import * as path from 'path';
 import dotenv from 'dotenv';
 
-// Load environment variables
-dotenv.config({ path: path.join(__dirname, '..', '.env.test') });
+// Load environment variables from the target environment's config file
+const testEnv = process.env.TEST_ENV || 'dev';
+const envFile = path.join(__dirname, '..', `.env.test.${testEnv}`);
+if (!fs.existsSync(envFile)) {
+    console.error(`Error: env file not found: ${envFile}`);
+    console.error(`Set TEST_ENV to 'dev' or 'production' and ensure the file exists.`);
+    process.exit(1);
+}
+dotenv.config({ path: envFile });
 
 // ============================================================================
 // BLACKLIST CONFIGURATION
@@ -40,13 +48,13 @@ interface DbConfig {
     database: string;
 }
 
-function getProductionDbConfig(): DbConfig {
+function getSourceDbConfig(): DbConfig {
     return {
         host: process.env.TEST_DB_HOST || process.env.DB_HOST || 'localhost',
         port: parseInt(process.env.TEST_DB_PORT || process.env.DB_PORT || '3306'),
         user: process.env.TEST_DB_USER || process.env.DB_USER || 'root',
         password: process.env.TEST_DB_PASS || process.env.DB_PASS || '',
-        database: process.env.PROD_DB_NAME || 'breakroom', // Production database name
+        database: process.env.SOURCE_DB_NAME || 'breakroom',
     };
 }
 
@@ -171,10 +179,10 @@ function generateDropStatements(tables: TableInfo[]): string {
  * Main schema sync function
  */
 async function syncSchema(options: { dryRun: boolean; verbose: boolean }): Promise<void> {
-    const config = getProductionDbConfig();
+    const config = getSourceDbConfig();
 
     console.log('='.repeat(70));
-    console.log('Production to Test Schema Sync');
+    console.log(`Schema Sync: ${config.database} → breakroom_test  [TEST_ENV=${testEnv}]`);
     console.log('='.repeat(70));
     console.log(`\nSource database: ${config.database} @ ${config.host}:${config.port}`);
     console.log(`Blacklisted tables: ${TABLE_BLACKLIST.join(', ') || '(none)'}`);
@@ -235,7 +243,7 @@ async function syncSchema(options: { dryRun: boolean; verbose: boolean }): Promi
 
         const header = `-- =============================================================================
 -- Test Database Schema
--- Generated from production database: ${config.database}
+-- Generated from ${testEnv} database: ${config.database}
 -- Generated at: ${new Date().toISOString()}
 --
 -- Blacklisted tables (not included):
@@ -289,13 +297,31 @@ SET FOREIGN_KEY_CHECKS = 1;
 
             fs.writeFileSync(outputPath, fullSchema, 'utf8');
             console.log(`\nSchema written to: ${outputPath}`);
+
+            // Record which environment this schema was synced from
+            const statePath = path.join(__dirname, '.db-state.json');
+            const state = {
+                configured_for: testEnv,
+                source_db: config.database,
+                schema_synced_at: new Date().toISOString(),
+                db_setup_at: null as string | null,
+            };
+            // Preserve existing db_setup_at if present
+            if (fs.existsSync(statePath)) {
+                try {
+                    const existing = JSON.parse(fs.readFileSync(statePath, 'utf8'));
+                    state.db_setup_at = existing.db_setup_at || null;
+                } catch { /* ignore */ }
+            }
+            fs.writeFileSync(statePath, JSON.stringify(state, null, 2), 'utf8');
+            console.log(`State recorded: breakroom_test configured for '${testEnv}'`);
         }
 
         // Summary
         console.log('\n' + '='.repeat(70));
         console.log('Summary');
         console.log('='.repeat(70));
-        console.log(`Total tables in production: ${allTables.length}`);
+        console.log(`Total tables in ${config.database}: ${allTables.length}`);
         console.log(`Tables synced: ${sortedTables.length}`);
         console.log(`Tables blacklisted: ${skippedTables.length}`);
 

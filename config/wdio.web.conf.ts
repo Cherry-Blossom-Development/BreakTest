@@ -1,12 +1,12 @@
 import path from 'path';
 import dotenv from 'dotenv';
 import BreakroomReporter from '../reporters/BreakroomReporter';
-import { ensureTestEnvironment } from '../utils/ensureTestEnv';
 
 const rootDir = path.resolve(__dirname, '..');
 
-// Load environment variables from .env.test
-dotenv.config({ path: path.join(rootDir, '.env.test') });
+// Load environment variables — TEST_ENV selects the target environment (dev | production)
+const testEnv = process.env.TEST_ENV || 'dev';
+dotenv.config({ path: path.join(rootDir, `.env.test.${testEnv}`) });
 
 export const config = {
     //
@@ -54,7 +54,7 @@ export const config = {
     // ===================
     logLevel: 'info',
     bail: 0,
-    baseUrl: process.env.BASE_URL || 'https://test.prosaurus.com:8443',
+    baseUrl: process.env.BASE_URL || 'https://dev.prosaurus.com',
     waitforTimeout: 10000,
     connectionRetryTimeout: 120000,
     connectionRetryCount: 3,
@@ -92,14 +92,6 @@ export const config = {
     //
     // Hooks
     // =====
-
-    /**
-     * Gets executed once before all workers get launched.
-     * Ensures the test environment is running before tests start.
-     */
-    onPrepare: async function () {
-        await ensureTestEnvironment();
-    },
 
     afterTest: async function (test: any, context: any, { error, passed }: { error?: Error; passed: boolean }) {
         if (!passed) {

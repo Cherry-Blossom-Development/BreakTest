@@ -23,6 +23,7 @@ Thumbs.db
 .env
 .env.local
 .env.test
+.env.test.*
 .env.demo
 .env.*.local
 
@@ -36,6 +37,9 @@ apps/*.app
 
 # Coverage
 coverage/
+
+# Test database state (local tracking of which env breakroom_test is configured for)
+database/.db-state.json
 
 # Temporary files
 *.log
