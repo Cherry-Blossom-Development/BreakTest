@@ -39,7 +39,7 @@ export default class BreakroomReporter extends WDIOReporter {
         super(options as any);
 
         // Load from options or environment variables
-        this.apiUrl = options.apiUrl || process.env.BREAKROOM_API_URL || 'https://www.prosaurus.com/api/test-results';
+        this.apiUrl = options.apiUrl || process.env.BREAKROOM_API_URL || '';
         this.apiKey = options.apiKey || process.env.BREAKROOM_TEST_API_KEY || '';
         this.platform = options.platform || (process.env.TEST_PLATFORM as 'web' | 'android' | 'ios') || 'web';
         this.environment = options.environment || process.env.TEST_ENVIRONMENT || 'local';
@@ -163,6 +163,11 @@ export default class BreakroomReporter extends WDIOReporter {
     onRunnerEnd(runner: RunnerStats): void {
         // Convert suites map to array
         const suitesArray = Array.from(this.collectedSuites.values());
+
+        if (!this.apiUrl) {
+            console.warn('[BreakroomReporter] BREAKROOM_API_URL is not set — results will not be reported. Set it in .env.test or via the BREAKROOM_API_URL environment variable.');
+            return;
+        }
 
         if (suitesArray.length === 0) {
             console.log('[BreakroomReporter] No test results to report');
