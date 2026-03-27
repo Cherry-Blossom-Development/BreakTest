@@ -52,6 +52,7 @@ class LoginPage extends BasePage {
     }
 
     async goToSignup(): Promise<void> {
+        await this.waitForScreen();
         await this.signupButton.click();
     }
 }

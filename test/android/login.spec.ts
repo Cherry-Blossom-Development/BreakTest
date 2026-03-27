@@ -4,9 +4,10 @@ import TestUsers from '../data/testUsers';
 describe('Breakroom Android - Login', () => {
     beforeEach(async () => {
         await driver.terminateApp('com.cherryblossomdev.breakroom');
+        await driver.pause(2000); // Allow ChatService and other components to fully stop
         await driver.execute('mobile: clearApp', { appId: 'com.cherryblossomdev.breakroom' });
         await driver.activateApp('com.cherryblossomdev.breakroom');
-        await LoginPage.waitForAppReady();
+        await LoginPage.waitForScreen(90000); // Wait until login screen is actually ready
     });
 
     it('should display the login screen', async () => {
