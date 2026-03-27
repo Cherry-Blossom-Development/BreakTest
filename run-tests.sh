@@ -91,6 +91,12 @@ if [[ "$PLATFORM" == "ios" ]]; then
     fi
 fi
 
+# Setup test data
+write_step "Setting up test data"
+cd "$SCRIPT_DIR"
+npx ts-node database/setup-test-data.ts "$ENVIRONMENT" 2>&1 | tail -5
+write_ok "Test data ready"
+
 # Run tests
 write_step "Running $PLATFORM tests against $ENVIRONMENT"
 echo ""
