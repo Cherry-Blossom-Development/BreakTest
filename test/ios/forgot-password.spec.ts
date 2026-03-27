@@ -3,19 +3,18 @@ import ForgotPasswordPage from '../../pages/ios/ForgotPasswordPage';
 import TestUsers from '../data/testUsers';
 
 const BUNDLE_ID = 'com.cherryblossomdev.Breakroom';
+const TEST_API_URL = process.env.TEST_API_URL || 'https://dev.prosaurus.com';
 
 describe('Breakroom iOS - Forgot Password', () => {
     beforeEach(async () => {
-        // Force full app restart with launch arguments to clear auth state
         try {
             await driver.terminateApp(BUNDLE_ID);
         } catch {
             // App might not be running
         }
-        // Use launchApp which re-applies processArguments including CLEAR_AUTH_STATE
         await driver.execute('mobile: launchApp', {
             bundleId: BUNDLE_ID,
-            arguments: ['-CLEAR_AUTH_STATE', 'YES', '-TEST_API_URL', 'http://localhost:3001'],
+            arguments: ['-CLEAR_AUTH_STATE', 'YES', '-TEST_API_URL', TEST_API_URL],
         });
         await LoginPage.waitForAppReady();
     });

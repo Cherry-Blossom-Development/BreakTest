@@ -152,14 +152,8 @@ class WidgetPage extends BasePage {
                 return true;
             }
 
-            // Scroll down to reveal more content
-            const { width, height } = await driver.getWindowSize();
-            await driver.touchAction([
-                { action: 'press', x: width / 2, y: height * 0.7 },
-                { action: 'wait', ms: 300 },
-                { action: 'moveTo', x: width / 2, y: height * 0.3 },
-                { action: 'release' },
-            ]);
+            // Scroll down to reveal more content using mobile: scroll
+            await driver.execute('mobile: scroll', { direction: 'down' });
             await driver.pause(1000);
         }
 

@@ -4,6 +4,7 @@ import EulaPage from '../../pages/ios/EulaPage';
 import TestUsers from '../data/testUsers';
 
 const BUNDLE_ID = 'com.cherryblossomdev.Breakroom';
+const TEST_API_URL = process.env.TEST_API_URL || 'https://dev.prosaurus.com';
 
 async function loginAndNavigateToBreakroom(): Promise<void> {
     try {
@@ -12,10 +13,9 @@ async function loginAndNavigateToBreakroom(): Promise<void> {
         // App might not be running
     }
 
-    // Launch app with test configuration
     await driver.execute('mobile: launchApp', {
         bundleId: BUNDLE_ID,
-        arguments: ['-CLEAR_AUTH_STATE', 'YES', '-TEST_API_URL', 'http://localhost:3001'],
+        arguments: ['-CLEAR_AUTH_STATE', 'YES', '-TEST_API_URL', TEST_API_URL],
     });
 
     await LoginPage.waitForAppReady();

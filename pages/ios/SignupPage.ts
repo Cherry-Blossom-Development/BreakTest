@@ -53,10 +53,44 @@ class SignupPage extends BasePage {
         await this.firstNameInput.setValue(firstName);
         await this.lastNameInput.setValue(lastName);
         await this.emailInput.setValue(email);
+
+        // Enter password fields
         await this.passwordInput.setValue(password);
         await this.confirmPasswordInput.setValue(password);
+
+        // Dismiss iOS password suggestion popup if present
+        // This might clear or modify the password fields
+        await this.dismissPasswordPopup();
         await this.hideKeyboard();
+
+        // Re-enter passwords after dismissing popup to ensure they're correct
+        // The iOS password suggestion popup can interfere with the password fields
+        await this.passwordInput.clearValue();
+        await this.passwordInput.setValue(password);
+        await this.confirmPasswordInput.clearValue();
+        await this.confirmPasswordInput.setValue(password);
+        await this.hideKeyboard();
+
+        // Small pause to ensure form validation updates
+        await driver.pause(300);
+
         await this.createAccountButton.click();
+    }
+
+    /**
+     * Dismiss iOS strong password suggestion popup if present
+     */
+    async dismissPasswordPopup(): Promise<void> {
+        try {
+            const closeButton = await $('~xmark');
+            const isVisible = await closeButton.isDisplayed().catch(() => false);
+            if (isVisible) {
+                await closeButton.click();
+                await driver.pause(300);
+            }
+        } catch {
+            // No popup present
+        }
     }
 
     async isDisplayed(): Promise<boolean> {
@@ -69,7 +103,7 @@ class SignupPage extends BasePage {
 
     async getErrorMessage(): Promise<string> {
         try {
-            await this.errorMessage.waitForDisplayed({ timeout: 5000 });
+            await this.errorMessage.waitForDisplayed({ timeout: 10000 });
             return await this.errorMessage.getText();
         } catch {
             return '';

@@ -4,6 +4,7 @@ import EulaPage from '../../pages/ios/EulaPage';
 import TestUsers from '../data/testUsers';
 
 const BUNDLE_ID = 'com.cherryblossomdev.Breakroom';
+const TEST_API_URL = process.env.TEST_API_URL || 'https://dev.prosaurus.com';
 
 async function loginAndNavigateToChat(): Promise<void> {
     try {
@@ -11,10 +12,9 @@ async function loginAndNavigateToChat(): Promise<void> {
     } catch {
         // App might not be running
     }
-    // Use launchApp to re-apply launch arguments including CLEAR_AUTH_STATE
     await driver.execute('mobile: launchApp', {
         bundleId: BUNDLE_ID,
-        arguments: ['-CLEAR_AUTH_STATE', 'YES', '-TEST_API_URL', 'http://localhost:3001'],
+        arguments: ['-CLEAR_AUTH_STATE', 'YES', '-TEST_API_URL', TEST_API_URL],
     });
     await LoginPage.waitForAppReady();
     await LoginPage.login(TestUsers.standard.handle, TestUsers.standard.password);

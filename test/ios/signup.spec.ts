@@ -2,6 +2,7 @@ import LoginPage from '../../pages/ios/LoginPage';
 import SignupPage from '../../pages/ios/SignupPage';
 
 const BUNDLE_ID = 'com.cherryblossomdev.Breakroom';
+const TEST_API_URL = process.env.TEST_API_URL || 'https://dev.prosaurus.com';
 
 describe('Breakroom iOS - Signup', () => {
     const timestamp = Date.now();
@@ -19,10 +20,9 @@ describe('Breakroom iOS - Signup', () => {
         } catch {
             // App might not be running
         }
-        // Use launchApp to re-apply launch arguments including CLEAR_AUTH_STATE
         await driver.execute('mobile: launchApp', {
             bundleId: BUNDLE_ID,
-            arguments: ['-CLEAR_AUTH_STATE', 'YES', '-TEST_API_URL', 'http://localhost:3001'],
+            arguments: ['-CLEAR_AUTH_STATE', 'YES', '-TEST_API_URL', TEST_API_URL],
         });
         await LoginPage.waitForAppReady();
         await LoginPage.goToSignup();
@@ -58,9 +58,8 @@ describe('Breakroom iOS - Signup', () => {
         expect(isSignupDisplayed).toBe(false);
     });
 
-    it.skip('should show error for duplicate handle', async () => {
-        // TODO: Error message not appearing - may need app-side fix for error display
-        // Use an existing handle from seeded test data
+    it('should show error for duplicate handle', async () => {
+        // Use an existing handle from test data
         await SignupPage.signup(
             'testuser',
             'Another',
@@ -69,7 +68,12 @@ describe('Breakroom iOS - Signup', () => {
             testUser.password
         );
 
-        await driver.pause(3000);
+        // Wait for API response and UI update
+        await driver.pause(5000);
+
+        // Scroll down to see the error message (it's below the form fields)
+        await driver.execute('mobile: scroll', { direction: 'down' });
+        await driver.pause(1000);
 
         const errorText = await SignupPage.getErrorMessage();
         expect(errorText.length).toBeGreaterThan(0);
