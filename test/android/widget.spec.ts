@@ -7,9 +7,11 @@ const PACKAGE_ID = 'com.cherryblossomdev.breakroom';
 /**
  * Android Widget Tests
  *
- * NOTE: These tests may be limited until testTag modifiers are added
- * to ChatRoomWidget.kt in the Android app. See WidgetPage.ts for
- * the required testTags.
+ * Mirrors the iOS widget test suite. Tests the ChatRoomWidget
+ * input area (message field, send button, media/attach button).
+ *
+ * testTags used: widget-media-button, widget-message-input, widget-send-button
+ * All defined in ChatRoomWidget.kt.
  */
 
 async function loginAndNavigateToBreakroom(): Promise<void> {
@@ -119,22 +121,58 @@ describe('Breakroom Android - Chat Widget', () => {
     });
 
     describe('Media Button Functionality', () => {
-        it('should show attachment menu when media button is clicked', async () => {
-            // Click the media button
+        it('should open attachment menu when media button is clicked', async () => {
             await WidgetPage.clickMediaButton();
             await driver.pause(1000);
 
-            // Verify attachment menu items are visible
-            const imageOption = await $('android=new UiSelector().text("Image")');
-            const videoOption = await $('android=new UiSelector().text("Video")');
+            const menuOpen = await WidgetPage.isAttachMenuDisplayed();
+            expect(menuOpen).toBe(true);
 
-            const imageVisible = await imageOption.isDisplayed().catch(() => false);
-            const videoVisible = await videoOption.isDisplayed().catch(() => false);
+            await WidgetPage.dismissAttachMenu();
+            await driver.pause(500);
+        });
+    });
 
-            expect(imageVisible || videoVisible).toBe(true);
+    describe('Button Tap Target Isolation', () => {
+        /**
+         * Verifies that send and media buttons have properly isolated tap targets
+         * and do not interfere with each other.
+         */
+        it('should have isolated tap targets for send and media buttons', async () => {
+            await WidgetPage.enterMessage('Tap test');
+            await WidgetPage.hideKeyboard();
+            await driver.pause(500);
 
-            // Dismiss by pressing back
-            await driver.back();
+            const sendButton = await WidgetPage.sendButton;
+            const mediaButton = await WidgetPage.mediaButton;
+
+            const sendLocation = await sendButton.getLocation();
+            const mediaLocation = await mediaButton.getLocation();
+            const sendSize = await sendButton.getSize();
+            const mediaSize = await mediaButton.getSize();
+
+            console.log(`Send button: x=${sendLocation.x}, y=${sendLocation.y}, w=${sendSize.width}, h=${sendSize.height}`);
+            console.log(`Media button: x=${mediaLocation.x}, y=${mediaLocation.y}, w=${mediaSize.width}, h=${mediaSize.height}`);
+
+            // Send button should be to the right of media button
+            const mediaRight = mediaLocation.x + mediaSize.width;
+            const sendLeft = sendLocation.x;
+            expect(sendLeft).toBeGreaterThan(mediaRight - 20);
+        });
+
+        it('should not open attachment menu when tapping disabled send button', async () => {
+            await WidgetPage.messageInput.clearValue();
+            await driver.pause(300);
+
+            // Send button is disabled — tapping it should do nothing
+            await WidgetPage.clickSendButton();
+            await driver.pause(1000);
+
+            const menuOpen = await WidgetPage.isAttachMenuDisplayed();
+            expect(menuOpen).toBe(false);
+
+            const widgetVisible = await WidgetPage.isWidgetDisplayed();
+            expect(widgetVisible).toBe(true);
         });
     });
 });

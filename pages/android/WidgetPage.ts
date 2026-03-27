@@ -2,33 +2,24 @@ import BasePage from './BasePage';
 
 /**
  * Page object for Chat Widget within Breakroom blocks (Android)
- *
- * NOTE: The Android ChatRoomWidget currently lacks testTag modifiers.
- * This page object uses UI Automator selectors as fallback until
- * testTags are added to the Android app.
- *
- * TODO: Add these testTags to ChatRoomWidget.kt:
- *   - Modifier.testTag("widget-media-button") on attach IconButton
- *   - Modifier.testTag("widget-message-input") on OutlinedTextField
- *   - Modifier.testTag("widget-send-button") on send IconButton
  */
 class WidgetPage extends BasePage {
-    // Widget chat elements (using content descriptions as fallback)
+    // Widget chat elements (testTags set in ChatRoomWidget.kt)
     get mediaButton() {
-        return $('android=new UiSelector().description("Attach")');
+        return this.rid('widget-media-button');
     }
 
     get messageInput() {
-        return $('android=new UiSelector().className("android.widget.EditText")');
+        return this.rid('widget-message-input');
     }
 
     get sendButton() {
-        return $('android=new UiSelector().description("Send")');
+        return this.rid('widget-send-button');
     }
 
-    // Navigation tab
+    // Navigation tab — route is "home", tag is "nav-home"
     get breakroomTab() {
-        return this.rid('nav-breakroom');
+        return this.rid('nav-home');
     }
 
     async navigateToBreakroom(): Promise<void> {
@@ -103,7 +94,33 @@ class WidgetPage extends BasePage {
     }
 
     /**
-     * Find and scroll to a block with a chat widget
+     * Check if the attachment dropdown menu is displayed.
+     * Android shows a DropdownMenu with "Image" and "Video" options.
+     */
+    async isAttachMenuDisplayed(): Promise<boolean> {
+        try {
+            const imageOption = await $('android=new UiSelector().text("Image")');
+            return await imageOption.isDisplayed().catch(() => false);
+        } catch {
+            return false;
+        }
+    }
+
+    /**
+     * Dismiss the attachment dropdown menu by pressing back
+     */
+    async dismissAttachMenu(): Promise<void> {
+        try {
+            await driver.back();
+            await driver.pause(300);
+        } catch {
+            // Menu might not be open
+        }
+    }
+
+    /**
+     * Find and scroll to a block with a chat widget.
+     * Scrolls down up to 5 times looking for the widget message input.
      */
     async openBlockWithChatWidget(): Promise<boolean> {
         for (let attempt = 0; attempt < 5; attempt++) {
