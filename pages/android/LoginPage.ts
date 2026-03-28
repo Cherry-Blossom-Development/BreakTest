@@ -21,6 +21,10 @@ class LoginPage extends BasePage {
         return this.rid('signup-button');
     }
 
+    get forgotPasswordButton() {
+        return this.rid('forgot-password-button');
+    }
+
     async waitForScreen(timeout = 30000): Promise<void> {
         await this.usernameInput.waitForDisplayed({ timeout });
     }
@@ -54,6 +58,11 @@ class LoginPage extends BasePage {
     async goToSignup(): Promise<void> {
         await this.waitForScreen();
         await this.signupButton.click();
+    }
+
+    async goToForgotPassword(): Promise<void> {
+        await this.waitForScreen();
+        await this.forgotPasswordButton.click();
     }
 }
 

@@ -5,23 +5,21 @@ import TestUsers from '../data/testUsers';
 describe('Breakroom Android - Forgot Password', () => {
     beforeEach(async () => {
         await driver.terminateApp('com.cherryblossomdev.breakroom');
+        await driver.pause(2000); // Allow ChatService and other components to fully stop
         await driver.execute('mobile: clearApp', { appId: 'com.cherryblossomdev.breakroom' });
         await driver.activateApp('com.cherryblossomdev.breakroom');
-        await LoginPage.waitForScreen();
+        await LoginPage.waitForScreen(90000); // Wait until login screen is actually ready
     });
 
     it('should be accessible from the login screen', async () => {
-        const forgotButton = LoginPage['rid']('forgot-password-button');
-        await forgotButton.waitForDisplayed({ timeout: 10000 });
-        await forgotButton.click();
+        await LoginPage.goToForgotPassword();
 
         const isDisplayed = await ForgotPasswordPage.isDisplayed();
         expect(isDisplayed).toBe(true);
     });
 
     it('should display the forgot password screen elements', async () => {
-        const forgotButton = LoginPage['rid']('forgot-password-button');
-        await forgotButton.click();
+        await LoginPage.goToForgotPassword();
         await ForgotPasswordPage.waitForScreen();
 
         await expect(ForgotPasswordPage.emailInput).toBeDisplayed();
@@ -30,8 +28,7 @@ describe('Breakroom Android - Forgot Password', () => {
     });
 
     it('should show a validation error when submitting an empty email', async () => {
-        const forgotButton = LoginPage['rid']('forgot-password-button');
-        await forgotButton.click();
+        await LoginPage.goToForgotPassword();
         await ForgotPasswordPage.waitForScreen();
 
         await ForgotPasswordPage.submitEmpty();
@@ -41,8 +38,7 @@ describe('Breakroom Android - Forgot Password', () => {
     });
 
     it('should show a success message after submitting a registered email', async () => {
-        const forgotButton = LoginPage['rid']('forgot-password-button');
-        await forgotButton.click();
+        await LoginPage.goToForgotPassword();
         await ForgotPasswordPage.waitForScreen();
 
         await ForgotPasswordPage.requestReset(TestUsers.standard.email);
@@ -52,8 +48,7 @@ describe('Breakroom Android - Forgot Password', () => {
     });
 
     it('should navigate back to login from the success screen', async () => {
-        const forgotButton = LoginPage['rid']('forgot-password-button');
-        await forgotButton.click();
+        await LoginPage.goToForgotPassword();
         await ForgotPasswordPage.waitForScreen();
 
         await ForgotPasswordPage.requestReset(TestUsers.standard.email);
