@@ -24,11 +24,11 @@ class WidgetPage extends BasePage {
     }
 
     get attachMenuImageOption() {
-        return $('.attach-option=Image');
+        return $('.attach-option*=Image');
     }
 
     get attachMenuVideoOption() {
-        return $('.attach-option=Video');
+        return $('.attach-option*=Video');
     }
 
     /**

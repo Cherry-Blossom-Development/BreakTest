@@ -1,17 +1,10 @@
 /**
  * Test Email Reader Utility
  *
- * Reads verification emails written by the backend in test mode.
- * When NODE_ENV=test, the backend writes emails to files instead of sending them.
+ * Fetches verification/reset emails from the backend's test-only API endpoints.
+ * When NODE_ENV=test, the backend writes emails to disk instead of sending via SES,
+ * and exposes them at /api/auth/test-emails/:email and /api/auth/test-emails/reset/:email.
  */
-
-import * as fs from 'fs';
-import * as path from 'path';
-
-const BREAKROOM_DIR = process.env.BREAKROOM_DIR ||
-    path.resolve(__dirname, '..', '..', 'Breakroom');
-// Test emails are written to backend/test-emails (inside Docker-mounted volume)
-const TEST_EMAIL_DIR = path.join(BREAKROOM_DIR, 'backend', 'test-emails');
 
 interface TestEmail {
     to: string;
@@ -19,25 +12,26 @@ interface TestEmail {
     subject: string;
     html: string;
     verificationToken: string;
+    resetToken?: string;
     timestamp: string;
 }
 
-/**
- * Gets a test email by email address, waiting for it to appear
- * @param email - The email address to look for
- * @param timeout - Max time to wait in ms (default 10000)
- */
-export async function getTestEmail(
-    email: string,
-    timeout: number = 10000
-): Promise<TestEmail> {
-    const filePath = path.join(TEST_EMAIL_DIR, `${email}.json`);
+function getApiBase(): string {
+    return (process.env.BASE_URL || 'https://test.dev.prosaurus.com').replace(/\/$/, '');
+}
+
+async function fetchWithRetry(url: string, email: string, timeout: number): Promise<TestEmail> {
     const startTime = Date.now();
 
     while (Date.now() - startTime < timeout) {
-        if (fs.existsSync(filePath)) {
-            const content = fs.readFileSync(filePath, 'utf8');
-            return JSON.parse(content);
+        try {
+            const res = await fetch(url);
+            if (res.ok) {
+                return await res.json() as TestEmail;
+            }
+            // 404 = not written yet; keep polling
+        } catch {
+            // Network error — keep polling
         }
         await new Promise(resolve => setTimeout(resolve, 500));
     }
@@ -46,59 +40,38 @@ export async function getTestEmail(
 }
 
 /**
- * Clears a specific test email file
- * @param email - The email address to clear
+ * Gets a signup verification email by address, polling until it appears.
  */
-export function clearTestEmail(email: string): void {
-    const filePath = path.join(TEST_EMAIL_DIR, `${email}.json`);
-    if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath);
-    }
+export async function getTestEmail(email: string, timeout: number = 10000): Promise<TestEmail> {
+    const url = `${getApiBase()}/api/auth/test-emails/${encodeURIComponent(email)}`;
+    return fetchWithRetry(url, email, timeout);
 }
 
 /**
- * Gets a password reset email by email address, waiting for it to appear.
- * Reset emails are written as reset-${email}.json by the backend.
- * @param email - The email address to look for
- * @param timeout - Max time to wait in ms (default 10000)
+ * Clears a signup verification email file via the API.
  */
-export async function getResetEmail(
-    email: string,
-    timeout: number = 10000
-): Promise<TestEmail> {
-    const filePath = path.join(TEST_EMAIL_DIR, `reset-${email}.json`);
-    const startTime = Date.now();
-
-    while (Date.now() - startTime < timeout) {
-        if (fs.existsSync(filePath)) {
-            const content = fs.readFileSync(filePath, 'utf8');
-            return JSON.parse(content);
-        }
-        await new Promise(resolve => setTimeout(resolve, 500));
-    }
-
-    throw new Error(`Reset email for ${email} not found within ${timeout}ms`);
+export async function clearTestEmail(email: string): Promise<void> {
+    const url = `${getApiBase()}/api/auth/test-emails/${encodeURIComponent(email)}`;
+    try { await fetch(url, { method: 'DELETE' }); } catch { /* best-effort */ }
 }
 
 /**
- * Clears a specific password reset email file
- * @param email - The email address to clear
+ * Gets a password reset email by address, polling until it appears.
  */
-export function clearResetEmail(email: string): void {
-    const filePath = path.join(TEST_EMAIL_DIR, `reset-${email}.json`);
-    if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath);
-    }
+export async function getResetEmail(email: string, timeout: number = 10000): Promise<TestEmail> {
+    const url = `${getApiBase()}/api/auth/test-emails/reset/${encodeURIComponent(email)}`;
+    return fetchWithRetry(url, email, timeout);
 }
 
 /**
- * Clears all test email files
+ * Clears a password reset email file via the API.
  */
-export function clearAllTestEmails(): void {
-    if (fs.existsSync(TEST_EMAIL_DIR)) {
-        const files = fs.readdirSync(TEST_EMAIL_DIR);
-        for (const file of files) {
-            fs.unlinkSync(path.join(TEST_EMAIL_DIR, file));
-        }
-    }
+export async function clearResetEmail(email: string): Promise<void> {
+    const url = `${getApiBase()}/api/auth/test-emails/reset/${encodeURIComponent(email)}`;
+    try { await fetch(url, { method: 'DELETE' }); } catch { /* best-effort */ }
 }
+
+/**
+ * No-op — bulk clear not available via API; clear individually if needed.
+ */
+export async function clearAllTestEmails(): Promise<void> {}
