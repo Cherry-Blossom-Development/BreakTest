@@ -1,5 +1,6 @@
 import LoginPage from '../../pages/ios/LoginPage';
 import LogoutPage from '../../pages/ios/LogoutPage';
+import EulaPage from '../../pages/ios/EulaPage';
 import TestUsers from '../data/testUsers';
 
 const BUNDLE_ID = 'com.cherryblossomdev.Breakroom';
@@ -19,6 +20,9 @@ async function resetAndLogin(handle: string, password: string): Promise<void> {
     await LoginPage.waitForScreen(90000);
     await LoginPage.login(handle, password);
     await driver.pause(5000);
+
+    // Accept EULA if it appears after login
+    await EulaPage.acceptIfDisplayed();
 }
 
 describe('Breakroom iOS - Logout', () => {
@@ -91,6 +95,9 @@ describe('Breakroom iOS - Logout', () => {
         await LoginPage.waitForScreen(90000);
         await LoginPage.login(TestUsers.admin.handle, TestUsers.admin.password);
         await driver.pause(5000);
+
+        // Accept EULA if it appears after login
+        await EulaPage.acceptIfDisplayed();
 
         await LogoutPage.logout();
         await driver.pause(3000);

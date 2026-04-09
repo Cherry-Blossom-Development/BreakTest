@@ -1,0 +1,285 @@
+name: E2E Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Test environment'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+          - production
+      platform:
+        description: 'Platform to test'
+        required: true
+        default: 'web'
+        type: choice
+        options:
+          - web
+          - android
+          - ios
+          - all
+
+env:
+  NODE_VERSION: '20'
+
+jobs:
+  web-tests:
+    name: Web E2E Tests
+    runs-on: ubuntu-latest
+    if: github.event_name != 'workflow_dispatch' || github.event.inputs.platform == 'web' || github.event.inputs.platform == 'all'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Chrome
+        uses: browser-actions/setup-chrome@v1
+        with:
+          chrome-version: stable
+
+      - name: Setup test environment
+        run: |
+          cat > .env.test.dev << 'EOF'
+          TEST_DB_HOST=${{ secrets.TEST_DB_HOST }}
+          TEST_DB_PORT=${{ secrets.TEST_DB_PORT }}
+          TEST_DB_USER=${{ secrets.TEST_DB_USER }}
+          TEST_DB_PASS=${{ secrets.TEST_DB_PASS }}
+          TEST_DB_NAME=breakroom_test
+          BASE_URL=https://dev.prosaurus.com
+          TEST_API_URL=https://dev.prosaurus.com
+          BREAKROOM_API_URL=https://dev.prosaurus.com/api/test-results
+          BREAKROOM_TEST_API_KEY=${{ secrets.BREAKROOM_TEST_API_KEY }}
+          TEST_ENVIRONMENT=dev
+          EOF
+
+      - name: Run web tests (headless)
+        run: npm run test:web:dev:headless
+        env:
+          HEADLESS: 'true'
+          TEST_ENV: dev
+          GIT_BRANCH: ${{ github.ref_name }}
+          GIT_COMMIT: ${{ github.sha }}
+
+      - name: Upload Allure results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: allure-results-web
+          path: allure-results/
+          retention-days: 30
+
+  android-tests:
+    name: Android E2E Tests
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' && (github.event.inputs.platform == 'android' || github.event.inputs.platform == 'all')
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: AVD cache
+        uses: actions/cache@v4
+        id: avd-cache
+        with:
+          path: |
+            ~/.android/avd/*
+            ~/.android/adb*
+          key: avd-api-34-${{ runner.os }}
+
+      - name: Create AVD and generate snapshot
+        if: steps.avd-cache.outputs.cache-hit != 'true'
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          arch: x86_64
+          force-avd-creation: false
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
+          disable-animations: true
+          script: echo "AVD snapshot generated"
+
+      - name: Setup test environment
+        run: |
+          cat > .env.test.dev << 'EOF'
+          TEST_DB_HOST=${{ secrets.TEST_DB_HOST }}
+          TEST_DB_PORT=${{ secrets.TEST_DB_PORT }}
+          TEST_DB_USER=${{ secrets.TEST_DB_USER }}
+          TEST_DB_PASS=${{ secrets.TEST_DB_PASS }}
+          TEST_DB_NAME=breakroom_test
+          BASE_URL=https://dev.prosaurus.com
+          TEST_API_URL=https://dev.prosaurus.com
+          BREAKROOM_API_URL=https://dev.prosaurus.com/api/test-results
+          BREAKROOM_TEST_API_KEY=${{ secrets.BREAKROOM_TEST_API_KEY }}
+          TEST_ENVIRONMENT=dev
+          EOF
+
+      - name: Download Android APK
+        run: |
+          mkdir -p apps
+          # Download the APK from your release artifacts or build it
+          # For now, this step assumes the APK is available
+          echo "APK should be placed at apps/Breakroom.apk"
+
+      - name: Run Android tests
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          arch: x86_64
+          force-avd-creation: false
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
+          disable-animations: true
+          script: |
+            npx appium --base-path / --address localhost --port 4723 &
+            sleep 10
+            npm run test:android:dev
+        env:
+          TEST_ENV: dev
+          GIT_BRANCH: ${{ github.ref_name }}
+          GIT_COMMIT: ${{ github.sha }}
+
+      - name: Upload Allure results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: allure-results-android
+          path: allure-results/
+          retention-days: 30
+
+  ios-tests:
+    name: iOS E2E Tests
+    runs-on: macos-14
+    if: github.event_name == 'workflow_dispatch' && (github.event.inputs.platform == 'ios' || github.event.inputs.platform == 'all')
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Setup Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - name: Setup test environment
+        run: |
+          cat > .env.test.dev << 'EOF'
+          TEST_DB_HOST=${{ secrets.TEST_DB_HOST }}
+          TEST_DB_PORT=${{ secrets.TEST_DB_PORT }}
+          TEST_DB_USER=${{ secrets.TEST_DB_USER }}
+          TEST_DB_PASS=${{ secrets.TEST_DB_PASS }}
+          TEST_DB_NAME=breakroom_test
+          BASE_URL=https://dev.prosaurus.com
+          TEST_API_URL=https://dev.prosaurus.com
+          BREAKROOM_API_URL=https://dev.prosaurus.com/api/test-results
+          BREAKROOM_TEST_API_KEY=${{ secrets.BREAKROOM_TEST_API_KEY }}
+          TEST_ENVIRONMENT=dev
+          DEVICE_NAME=iPhone 15 Pro
+          PLATFORM_VERSION=17.4
+          EOF
+
+      - name: List available simulators
+        run: xcrun simctl list devices available
+
+      - name: Boot iOS Simulator
+        run: |
+          DEVICE_UDID=$(xcrun simctl list devices available | grep "iPhone 15 Pro" | grep -v "Max" | head -1 | grep -oE '[A-F0-9-]{36}')
+          xcrun simctl boot "$DEVICE_UDID" || true
+          echo "DEVICE_UDID=$DEVICE_UDID" >> $GITHUB_ENV
+
+      - name: Download iOS App
+        run: |
+          mkdir -p apps
+          # Download the .app bundle from your build artifacts
+          # For now, this step assumes the app is available
+          echo "iOS app should be placed at apps/Breakroom.app"
+
+      - name: Start Appium
+        run: |
+          npx appium --base-path / --address localhost --port 4723 &
+          sleep 10
+
+      - name: Run iOS tests
+        run: npm run test:ios:dev
+        env:
+          TEST_ENV: dev
+          GIT_BRANCH: ${{ github.ref_name }}
+          GIT_COMMIT: ${{ github.sha }}
+
+      - name: Upload Allure results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: allure-results-ios
+          path: allure-results/
+          retention-days: 30
+
+  report:
+    name: Generate Test Report
+    runs-on: ubuntu-latest
+    needs: [web-tests]
+    if: always()
+
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: allure-results
+          pattern: allure-results-*
+          merge-multiple: true
+
+      - name: Setup Allure
+        uses: simple-elf/allure-report-action@v1.9
+        if: always()
+        with:
+          allure_results: allure-results
+          allure_history: allure-history
+          keep_reports: 20
+
+      - name: Deploy report to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        if: always() && github.ref == 'refs/heads/main'
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: allure-history
+          destination_dir: test-reports
