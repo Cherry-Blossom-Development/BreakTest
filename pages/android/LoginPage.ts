@@ -55,8 +55,8 @@ class LoginPage extends BasePage {
         }
     }
 
-    async goToSignup(): Promise<void> {
-        await this.waitForScreen();
+    async goToSignup(timeout = 30000): Promise<void> {
+        await this.waitForScreen(timeout);
         await this.signupButton.click();
     }
 

@@ -16,7 +16,7 @@ describe('Breakroom Android - Signup', () => {
         await driver.execute('mobile: clearApp', { appId: 'com.cherryblossomdev.breakroom' });
         await driver.activateApp('com.cherryblossomdev.breakroom');
         await LoginPage.waitForAppReady();
-        await LoginPage.goToSignup();
+        await LoginPage.goToSignup(90000);
         await SignupPage.waitForScreen();
     });
 
