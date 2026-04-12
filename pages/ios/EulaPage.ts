@@ -74,8 +74,8 @@ class EulaPage extends BasePage {
         // First check if we're on the EULA screen at all
         const onEulaScreen = await this.isOnEulaScreen();
         if (!onEulaScreen) {
-            // Check if main app is showing instead
-            const tabBar = await $('~tabChat');
+            // Check if main app is showing instead (use SF Symbol name for tab)
+            const tabBar = await $('~bubble.left.and.bubble.right');
             const tabBarVisible = await tabBar.isDisplayed().catch(() => false);
             if (tabBarVisible) {
                 console.log('Main app visible, no EULA needed');
@@ -111,8 +111,8 @@ class EulaPage extends BasePage {
                 await this.accept();
                 return true;
             }
-            // Check if we're past EULA now
-            const tabBar = await $('~tabChat');
+            // Check if we're past EULA now (use SF Symbol name for tab)
+            const tabBar = await $('~bubble.left.and.bubble.right');
             const tabBarVisible = await tabBar.isDisplayed().catch(() => false);
             if (tabBarVisible) {
                 console.log('Main app now visible');
