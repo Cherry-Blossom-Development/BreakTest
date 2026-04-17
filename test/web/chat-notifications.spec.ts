@@ -66,12 +66,24 @@ describe('Breakroom Web - Chat Notifications', () => {
     });
 
     it('should show an unread badge on the room when another user sends a message', async () => {
-        // Login as testuser — the badge count is loaded from the API on login
-        await LoginPage.open();
-        await LoginPage.login(TestUsers.standard.handle, TestUsers.standard.password);
-        await browser.pause(2000);
+        // Log in via the API rather than the UI login form. Navigating to /breakroom
+        // after a normal UI login would trigger BreakroomPage.onMounted which calls
+        // badges.markAllRoomsRead(), wiping out the unread state before we can assert it.
+        // By using the API to set the auth cookie and then navigating directly to /chat,
+        // BreakroomPage never mounts and the badges are preserved.
+        await browser.url('/login');
+        await browser.execute(async (handle: string, password: string) => {
+            await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ handle, password }),
+            });
+        }, TestUsers.standard.handle, TestUsers.standard.password);
+        await browser.pause(500);
 
-        // Navigate to /chat so the sidebar room list becomes visible
+        // Navigate directly to /chat — badges are loaded from the API here but
+        // markAllRoomsRead() is never called because we skipped /breakroom.
         await browser.url('/chat');
         await browser.pause(2000);
 

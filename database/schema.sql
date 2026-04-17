@@ -1,7 +1,7 @@
 -- =============================================================================
 -- Test Database Schema
--- Generated from dev database: breakroom_dev
--- Generated at: 2026-03-27T14:40:36.798Z
+-- Generated from local database: breakroom
+-- Generated at: 2026-04-17T17:05:24.761Z
 --
 -- Blacklisted tables (not included):
 --   - test_cases
@@ -26,9 +26,11 @@ DROP TABLE IF EXISTS `notification_type_users`;
 DROP TABLE IF EXISTS `notification_types`;
 DROP TABLE IF EXISTS `open_positions`;
 DROP TABLE IF EXISTS `projects`;
+DROP TABLE IF EXISTS `ticket_comments`;
 DROP TABLE IF EXISTS `tickets`;
 DROP TABLE IF EXISTS `user_groups`;
 DROP TABLE IF EXISTS `user_permissions`;
+DROP TABLE IF EXISTS `user_post_last_read`;
 DROP TABLE IF EXISTS `user_skills`;
 DROP TABLE IF EXISTS `users_rooms`;
 DROP TABLE IF EXISTS `account_deletion_requests`;
@@ -60,6 +62,7 @@ DROP TABLE IF EXISTS `user_blocks`;
 DROP TABLE IF EXISTS `user_blog`;
 DROP TABLE IF EXISTS `user_gallery`;
 DROP TABLE IF EXISTS `user_jobs`;
+DROP TABLE IF EXISTS `user_settings`;
 DROP TABLE IF EXISTS `user_shortcuts`;
 DROP TABLE IF EXISTS `users`;
 
@@ -92,7 +95,7 @@ CREATE TABLE `users` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `handle` (`handle`),
   UNIQUE KEY `email` (`email`)
-) ENGINE=InnoDB AUTO_INCREMENT=57 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=53 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `user_shortcuts` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -107,7 +110,19 @@ CREATE TABLE `user_shortcuts` (
   KEY `idx_user_shortcuts_user` (`user_id`),
   KEY `idx_user_shortcuts_order` (`user_id`,`sort_order`),
   CONSTRAINT `user_shortcuts_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=20 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=23 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `user_settings` (
+  `user_id` int(11) NOT NULL,
+  `notifications_enabled` tinyint(1) NOT NULL DEFAULT 1,
+  `notify_chat_messages` tinyint(1) NOT NULL DEFAULT 1,
+  `notify_friend_requests` tinyint(1) NOT NULL DEFAULT 1,
+  `notify_blog_comments` tinyint(1) NOT NULL DEFAULT 1,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`user_id`),
+  CONSTRAINT `user_settings_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `user_jobs` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -125,7 +140,7 @@ CREATE TABLE `user_jobs` (
   KEY `idx_user_jobs_user_id` (`user_id`),
   KEY `idx_user_jobs_start_date` (`start_date`),
   CONSTRAINT `user_jobs_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `user_gallery` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -138,7 +153,7 @@ CREATE TABLE `user_gallery` (
   UNIQUE KEY `idx_gallery_url` (`gallery_url`),
   UNIQUE KEY `idx_gallery_user_id` (`user_id`),
   CONSTRAINT `user_gallery_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `user_blog` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -151,7 +166,7 @@ CREATE TABLE `user_blog` (
   UNIQUE KEY `idx_blog_url` (`blog_url`),
   KEY `idx_user_id` (`user_id`),
   CONSTRAINT `user_blog_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=47 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=45 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `user_blocks` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -163,7 +178,7 @@ CREATE TABLE `user_blocks` (
   KEY `blocked_user_id` (`blocked_user_id`),
   CONSTRAINT `user_blocks_ibfk_1` FOREIGN KEY (`blocker_user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
   CONSTRAINT `user_blocks_ibfk_2` FOREIGN KEY (`blocked_user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `system_emails` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -194,7 +209,7 @@ CREATE TABLE `songs` (
   KEY `idx_songs_user_id` (`user_id`),
   KEY `idx_songs_visibility` (`visibility`,`created_at`),
   CONSTRAINT `songs_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=17 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=19 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `song_collaborators` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -219,7 +234,7 @@ CREATE TABLE `skills` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `name` (`name`),
   KEY `idx_skills_name` (`name`)
-) ENGINE=InnoDB AUTO_INCREMENT=24 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=33 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `sessions` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -233,7 +248,7 @@ CREATE TABLE `sessions` (
   PRIMARY KEY (`id`),
   KEY `user_id` (`user_id`),
   CONSTRAINT `sessions_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 CREATE TABLE `session_ratings` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -318,7 +333,7 @@ CREATE TABLE `gallery_artworks` (
   KEY `idx_gallery_artworks_user_id` (`user_id`),
   KEY `idx_gallery_artworks_published` (`user_id`,`is_published`,`created_at`),
   CONSTRAINT `gallery_artworks_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=21 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `friends` (
   `user_id` int(11) NOT NULL,
@@ -326,6 +341,7 @@ CREATE TABLE `friends` (
   `status` enum('pending','accepted','blocked') DEFAULT 'pending',
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `seen_by_recipient` tinyint(1) NOT NULL DEFAULT 0,
   PRIMARY KEY (`user_id`,`friend_id`),
   KEY `idx_friends_friend_id` (`friend_id`),
   KEY `idx_friends_status` (`status`),
@@ -343,7 +359,7 @@ CREATE TABLE `features` (
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   PRIMARY KEY (`id`),
   UNIQUE KEY `feature_key` (`feature_key`)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `feature_users` (
   `feature_id` int(11) NOT NULL,
@@ -386,7 +402,7 @@ CREATE TABLE `content_flags` (
   CONSTRAINT `content_flags_ibfk_1` FOREIGN KEY (`flagged_by_user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL,
   CONSTRAINT `content_flags_ibfk_2` FOREIGN KEY (`content_author_id`) REFERENCES `users` (`id`) ON DELETE SET NULL,
   CONSTRAINT `content_flags_ibfk_3` FOREIGN KEY (`reviewed_by_user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `content_filter_keywords` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -412,7 +428,7 @@ CREATE TABLE `companies` (
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 CREATE TABLE `chat_rooms` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -446,7 +462,7 @@ CREATE TABLE `chat_messages` (
   KEY `idx_chat_messages_created_at` (`created_at`),
   CONSTRAINT `chat_messages_ibfk_1` FOREIGN KEY (`room_id`) REFERENCES `chat_rooms` (`id`) ON DELETE CASCADE,
   CONSTRAINT `chat_messages_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=218 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=300 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `breakroom_updates` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -456,7 +472,7 @@ CREATE TABLE `breakroom_updates` (
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`id`),
   KEY `idx_created_at` (`created_at`)
-) ENGINE=InnoDB AUTO_INCREMENT=59 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=60 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `breakroom_blocks` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -474,7 +490,7 @@ CREATE TABLE `breakroom_blocks` (
   PRIMARY KEY (`id`),
   KEY `idx_breakroom_blocks_user` (`user_id`),
   CONSTRAINT `breakroom_blocks_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=343 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=319 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 CREATE TABLE `breakroom_block_positions` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -504,7 +520,7 @@ CREATE TABLE `blog_posts` (
   KEY `idx_blog_posts_user_id` (`user_id`),
   KEY `idx_blog_posts_created_at` (`created_at`),
   CONSTRAINT `blog_posts_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=18 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=21 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `account_deletion_requests` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -525,6 +541,8 @@ CREATE TABLE `users_rooms` (
   `invited_by` int(11) DEFAULT NULL,
   `accepted` tinyint(1) DEFAULT 0,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `last_read_at` timestamp NULL DEFAULT NULL,
+  `notifications_muted` tinyint(1) NOT NULL DEFAULT 0,
   PRIMARY KEY (`user_id`,`room_id`),
   KEY `invited_by` (`invited_by`),
   KEY `idx_users_rooms_room_id` (`room_id`),
@@ -544,7 +562,17 @@ CREATE TABLE `user_skills` (
   KEY `idx_user_skills_user_id` (`user_id`),
   CONSTRAINT `user_skills_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
   CONSTRAINT `user_skills_ibfk_2` FOREIGN KEY (`skill_id`) REFERENCES `skills` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=24 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=33 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `user_post_last_read` (
+  `user_id` int(11) NOT NULL,
+  `post_id` int(11) NOT NULL,
+  `last_read_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`user_id`,`post_id`),
+  KEY `post_id` (`post_id`),
+  CONSTRAINT `user_post_last_read_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `user_post_last_read_ibfk_2` FOREIGN KEY (`post_id`) REFERENCES `blog_posts` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `user_permissions` (
   `user_id` int(11) NOT NULL,
@@ -583,7 +611,22 @@ CREATE TABLE `tickets` (
   CONSTRAINT `tickets_ibfk_1` FOREIGN KEY (`company_id`) REFERENCES `companies` (`id`),
   CONSTRAINT `tickets_ibfk_2` FOREIGN KEY (`creator_id`) REFERENCES `users` (`id`),
   CONSTRAINT `tickets_ibfk_3` FOREIGN KEY (`assigned_to`) REFERENCES `users` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=44 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=52 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE `ticket_comments` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `ticket_id` int(11) NOT NULL,
+  `user_id` int(11) NOT NULL,
+  `content` text NOT NULL,
+  `is_deleted` tinyint(1) NOT NULL DEFAULT 0,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `user_id` (`user_id`),
+  KEY `idx_ticket_comments_ticket_id` (`ticket_id`),
+  CONSTRAINT `ticket_comments_ibfk_1` FOREIGN KEY (`ticket_id`) REFERENCES `tickets` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `ticket_comments_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
 
 CREATE TABLE `projects` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -599,7 +642,7 @@ CREATE TABLE `projects` (
   KEY `idx_projects_company_id` (`company_id`),
   KEY `idx_projects_company_default` (`company_id`,`is_default`),
   CONSTRAINT `projects_ibfk_1` FOREIGN KEY (`company_id`) REFERENCES `companies` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=12 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `open_positions` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -674,7 +717,7 @@ CREATE TABLE `events` (
   KEY `idx_events_time` (`time`),
   CONSTRAINT `events_ibfk_1` FOREIGN KEY (`type_id`) REFERENCES `event_types` (`id`) ON DELETE CASCADE,
   CONSTRAINT `events_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
-) ENGINE=InnoDB AUTO_INCREMENT=36 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=38 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `employees` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -693,7 +736,7 @@ CREATE TABLE `employees` (
   KEY `company_id` (`company_id`),
   CONSTRAINT `employees_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`),
   CONSTRAINT `employees_ibfk_2` FOREIGN KEY (`company_id`) REFERENCES `companies` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 CREATE TABLE `ticket_projects` (
   `ticket_id` int(11) NOT NULL,
@@ -716,7 +759,7 @@ CREATE TABLE `notifications` (
   KEY `idx_notifications_notif` (`notif_id`),
   CONSTRAINT `notifications_ibfk_1` FOREIGN KEY (`notif_id`) REFERENCES `notification_types` (`id`) ON DELETE CASCADE,
   CONSTRAINT `notifications_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=25 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=23 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `blog_comments` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
