@@ -109,6 +109,46 @@ class ChatPage extends BasePage {
     async clearMessageInput(): Promise<void> {
         await this.messageInput.clearValue();
     }
+
+    /**
+     * Selects a chat room by name in the sidebar room list.
+     * The sidebar room list is only visible when on the /chat page.
+     * @param roomName - The display name of the room (without the '#' prefix)
+     */
+    async selectRoom(roomName: string): Promise<void> {
+        const roomItems = await $$('.room-item');
+        for (const item of roomItems) {
+            const nameEl = await item.$('.room-name');
+            if (await nameEl.isExisting()) {
+                const text = await nameEl.getText();
+                if (text.includes(roomName)) {
+                    await item.click();
+                    return;
+                }
+            }
+        }
+        throw new Error(`Room "${roomName}" not found in sidebar`);
+    }
+
+    /**
+     * Returns the unread badge element for a specific room in the sidebar.
+     * The badge is only present in the DOM when the room has unread messages.
+     * Must be on the /chat page for the sidebar room list to be visible.
+     * @param roomName - The display name of the room (without the '#' prefix)
+     */
+    async getRoomBadge(roomName: string) {
+        const roomItems = await $$('.room-item');
+        for (const item of roomItems) {
+            const nameEl = await item.$('.room-name');
+            if (await nameEl.isExisting()) {
+                const text = await nameEl.getText();
+                if (text.includes(roomName)) {
+                    return item.$('.room-badge');
+                }
+            }
+        }
+        throw new Error(`Room "${roomName}" not found in sidebar`);
+    }
 }
 
 export default new ChatPage();

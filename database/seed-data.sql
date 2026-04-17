@@ -113,6 +113,13 @@ INSERT INTO user_groups (user_id, group_id)
 SELECT u.id, g.id FROM users u, `groups` g
 WHERE u.handle = 'testunverified' AND g.name = 'Restricted';
 
+-- Add test users to the General chat room (required for badge counts to work)
+INSERT INTO users_rooms (user_id, room_id, accepted)
+SELECT u.id, cr.id, true
+FROM users u, chat_rooms cr
+WHERE u.handle IN ('testadmin', 'testuser')
+AND cr.name = 'General';
+
 -- Create default breakroom blocks for test users
 INSERT INTO breakroom_blocks (user_id, block_type, content_id, x, y, w, h, title)
 SELECT u.id, 'chat', (SELECT id FROM chat_rooms WHERE name = 'General'), 0, 0, 2, 2, NULL
