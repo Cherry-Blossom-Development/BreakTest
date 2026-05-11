@@ -140,6 +140,13 @@ SELECT id, handle, CONCAT(handle, '''s Blog') FROM users WHERE handle IN ('testa
 -- Set bio for test users (bio column is on users table)
 UPDATE users SET bio = 'Test user for automated testing' WHERE handle IN ('testadmin', 'testuser', 'testunverified');
 
+-- Shortcuts for test users (enables drawer navigation to Sessions/Collections in Android tests)
+INSERT INTO user_shortcuts (user_id, name, url, sort_order)
+SELECT u.id, 'Sessions', '/sessions', 1 FROM users u WHERE u.handle IN ('testadmin', 'testuser');
+
+INSERT INTO user_shortcuts (user_id, name, url, sort_order)
+SELECT u.id, 'Collections', '/collections', 2 FROM users u WHERE u.handle IN ('testadmin', 'testuser');
+
 -- ======================
 -- EULA System Data
 -- ======================
