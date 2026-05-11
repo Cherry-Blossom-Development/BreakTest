@@ -50,6 +50,8 @@ export const config = {
             'appium:noReset': false,
             'appium:fullReset': false,
             'appium:newCommandTimeout': 240,
+            // Auto-accept iOS system alerts (push notifications, location, etc.)
+            'appium:autoAcceptAlerts': true,
             // Pass test configuration via launch arguments
             // Format: -KEY VALUE sets UserDefaults.standard.object(forKey: "KEY")
             'appium:processArguments': {

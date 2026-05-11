@@ -64,12 +64,35 @@ class EulaPage extends BasePage {
     }
 
     /**
+     * Dismiss any iOS system alerts (push notifications, location, etc.)
+     */
+    async dismissSystemAlerts(): Promise<void> {
+        // Try to accept any system alerts that might be showing
+        for (let i = 0; i < 3; i++) {
+            try {
+                await driver.acceptAlert();
+                console.log('Accepted system alert');
+                await driver.pause(500);
+            } catch {
+                // No alert present, that's fine
+                break;
+            }
+        }
+    }
+
+    /**
      * Accept EULA if displayed, otherwise do nothing
      * Useful as a post-login helper
      */
     async acceptIfDisplayed(): Promise<boolean> {
+        // First, dismiss any system alerts (push notifications, etc.)
+        await this.dismissSystemAlerts();
+
         // Wait a moment for the screen to settle after login
         await driver.pause(3000);
+
+        // Check for and dismiss any additional alerts that may have appeared
+        await this.dismissSystemAlerts();
 
         // First check if we're on the EULA screen at all
         const onEulaScreen = await this.isOnEulaScreen();

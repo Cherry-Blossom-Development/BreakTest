@@ -30,12 +30,28 @@ async function navigateToCollections(): Promise<void> {
     await NavigationPage.tabToolShed.waitForDisplayed({ timeout: 10000 });
     await NavigationPage.tabToolShed.click();
     await NavigationPage.screenToolShed.waitForDisplayed({ timeout: 10000 });
-    await driver.pause(1000);
+    await driver.pause(2000); // Wait for features to load
 
-    // Find and tap Collections in Tool Shed
-    const collectionsItem = await $('~Collections');
-    await collectionsItem.waitForDisplayed({ timeout: 10000 });
-    await collectionsItem.click();
+    // Find and tap Collections "Open" button in Tool Shed
+    // The button identifier is: {toolName}OpenButton (lowercased, no spaces)
+    // Collections is in the Artist category, may need scrolling
+    const collectionsOpenButton = await $('~collectionsOpenButton');
+
+    // Try to scroll to find the button if not immediately visible
+    for (let attempt = 0; attempt < 5; attempt++) {
+        try {
+            const isDisplayed = await collectionsOpenButton.isDisplayed();
+            if (isDisplayed) break;
+        } catch {
+            // Element not found yet
+        }
+        // Scroll down to find it
+        await driver.execute('mobile: scroll', { direction: 'down' });
+        await driver.pause(500);
+    }
+
+    await collectionsOpenButton.waitForDisplayed({ timeout: 10000 });
+    await collectionsOpenButton.click();
 }
 
 // -----------------------------------------------------------------------------

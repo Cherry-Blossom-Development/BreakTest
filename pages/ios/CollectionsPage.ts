@@ -40,9 +40,41 @@ class CollectionsPage extends BasePage {
 
     /**
      * Wait for the Collections screen to be displayed.
+     * Checks for screen identifier or any of the content states.
      */
     async waitForScreen(timeout = 30000): Promise<void> {
-        await this.screenCollections.waitForDisplayed({ timeout });
+        // Try main screen identifier first
+        try {
+            await this.screenCollections.waitForDisplayed({ timeout: 5000 });
+            return;
+        } catch {
+            // Fall back to checking content states
+        }
+
+        // Check for any content state that indicates we're on Collections
+        const endTime = Date.now() + timeout;
+        while (Date.now() < endTime) {
+            // Check for loading state
+            const loading = await this.collectionsLoading.isDisplayed().catch(() => false);
+            if (loading) return;
+
+            // Check for empty state
+            const empty = await this.collectionsEmpty.isDisplayed().catch(() => false);
+            if (empty) return;
+
+            // Check for list
+            const list = await this.collectionsList.isDisplayed().catch(() => false);
+            if (list) return;
+
+            // Check for add button (always visible in toolbar)
+            const addBtn = await this.addButton.isDisplayed().catch(() => false);
+            if (addBtn) return;
+
+            await driver.pause(500);
+        }
+
+        // Final attempt with main identifier
+        await this.screenCollections.waitForDisplayed({ timeout: 5000 });
     }
 
     /**

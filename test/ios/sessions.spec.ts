@@ -30,12 +30,28 @@ async function navigateToSessions(): Promise<void> {
     await NavigationPage.tabToolShed.waitForDisplayed({ timeout: 10000 });
     await NavigationPage.tabToolShed.click();
     await NavigationPage.screenToolShed.waitForDisplayed({ timeout: 10000 });
-    await driver.pause(1000);
+    await driver.pause(2000); // Wait for features to load
 
-    // Find and tap Sessions in Tool Shed
-    const sessionsItem = await $('~Sessions');
-    await sessionsItem.waitForDisplayed({ timeout: 10000 });
-    await sessionsItem.click();
+    // Find and tap Sessions "Open" button in Tool Shed
+    // The button identifier is: {toolName}OpenButton (lowercased, no spaces)
+    // Sessions is in the Musician category (usually at top)
+    const sessionsOpenButton = await $('~sessionsOpenButton');
+
+    // Try to scroll to find the button if not immediately visible
+    for (let attempt = 0; attempt < 3; attempt++) {
+        try {
+            const isDisplayed = await sessionsOpenButton.isDisplayed();
+            if (isDisplayed) break;
+        } catch {
+            // Element not found yet
+        }
+        // Scroll down to find it
+        await driver.execute('mobile: scroll', { direction: 'down' });
+        await driver.pause(500);
+    }
+
+    await sessionsOpenButton.waitForDisplayed({ timeout: 10000 });
+    await sessionsOpenButton.click();
 }
 
 // -----------------------------------------------------------------------------
