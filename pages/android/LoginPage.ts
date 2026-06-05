@@ -26,6 +26,25 @@ class LoginPage extends BasePage {
     }
 
     async waitForScreen(timeout = 30000): Promise<void> {
+        // clearApp resets runtime permissions every cycle. Use mobile: changePermissions
+        // (no adb_shell required) to re-grant notification permission so the OS dialog
+        // never blocks the login screen.
+        try {
+            await driver.execute('mobile: changePermissions', {
+                permissions: ['android.permission.POST_NOTIFICATIONS'],
+                action: 'grant',
+                appPackage: 'com.cherryblossomdev.breakroom',
+            });
+        } catch { /* non-critical — dialog fallback below */ }
+
+        // Also dismiss the dialog in case it appeared before the grant took effect
+        try {
+            const allowBtn = $('android=new UiSelector().text("Allow")');
+            await allowBtn.waitForDisplayed({ timeout: 5000 });
+            await allowBtn.click();
+            await allowBtn.waitForDisplayed({ timeout: 3000, reverse: true });
+        } catch { /* no dialog present */ }
+
         await this.usernameInput.waitForDisplayed({ timeout });
     }
 

@@ -49,6 +49,7 @@ export const config = {
             'appium:appActivity': '.MainActivity',
             'appium:noReset': false,
             'appium:fullReset': false,
+            'appium:autoGrantPermissions': true,
             'appium:newCommandTimeout': 240,
         },
     ],

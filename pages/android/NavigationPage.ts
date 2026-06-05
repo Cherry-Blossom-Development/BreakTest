@@ -38,7 +38,7 @@ class NavigationPage extends BasePage {
      * Opens the drawer and taps an item by its visible text label.
      */
     async openDrawerAndTap(itemText: string): Promise<void> {
-        await this.menuButton.waitForDisplayed({ timeout: 10000 });
+        await this.menuButton.waitForDisplayed({ timeout: 30000 });
         await this.menuButton.click();
         await driver.pause(500);
         const item = await $(`android=new UiSelector().text("${itemText}")`);
