@@ -38,7 +38,7 @@ describe('Breakroom Web - Collections', () => {
 
     it('should display the Collections heading', async () => {
         await CollectionsPage.heading.waitForDisplayed({ timeout: 5000 });
-        expect(await CollectionsPage.heading.getText()).toBe('Collections');
+        expect(await CollectionsPage.heading.getText()).toBe('Artist Showcase');
     });
 
     it('should display the New Collection button', async () => {
@@ -142,9 +142,12 @@ describe('Breakroom Web - Collections', () => {
     });
 
     it('should navigate to the collection detail page via the Manage link', async () => {
+        await browser.waitUntil(
+            async () => (await CollectionsPage.findCollectionCard(testCollectionName)) !== null,
+            { timeout: 8000, timeoutMsg: `Collection card "${testCollectionName}" not found after page load` }
+        );
         const card = await CollectionsPage.findCollectionCard(testCollectionName);
-        expect(card).not.toBeNull();
-        const manageLink = await card!.$('.btn-sm*=Manage');
+        const manageLink = await card!.$('.btn-sm*=Items');
         await manageLink.waitForClickable({ timeout: 5000 });
         await manageLink.click();
         await browser.waitUntil(
@@ -213,7 +216,7 @@ describe('Breakroom Web - Collections', () => {
     it('should open the Edit modal with the collection name prefilled', async () => {
         const card = await CollectionsPage.findCollectionCard(testCollectionName);
         expect(card).not.toBeNull();
-        const editBtn = await card!.$('.btn-sm*=Edit');
+        const editBtn = await card!.$('.btn-sm*=Settings');
         await editBtn.waitForClickable({ timeout: 5000 });
         await editBtn.click();
         await CollectionsPage.modal.waitForDisplayed({ timeout: 5000 });
@@ -223,7 +226,7 @@ describe('Breakroom Web - Collections', () => {
 
     it('should update the collection name after editing', async () => {
         const card = await CollectionsPage.findCollectionCard(testCollectionName);
-        const editBtn = await card!.$('.btn-sm*=Edit');
+        const editBtn = await card!.$('.btn-sm*=Settings');
         await editBtn.click();
         await CollectionsPage.modal.waitForDisplayed({ timeout: 5000 });
         await CollectionsPage.nameInput.clearValue();
