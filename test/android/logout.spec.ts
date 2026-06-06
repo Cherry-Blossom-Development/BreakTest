@@ -3,11 +3,13 @@ import LogoutPage from '../../pages/android/LogoutPage';
 import TestUsers from '../data/testUsers';
 
 async function resetAndLogin(handle: string, password: string): Promise<void> {
+    await driver.terminateApp('com.cherryblossomdev.breakroom');
+    await driver.pause(2000);
     await driver.execute('mobile: clearApp', { appId: 'com.cherryblossomdev.breakroom' });
     await driver.activateApp('com.cherryblossomdev.breakroom');
     await LoginPage.waitForScreen(90000);
     await LoginPage.login(handle, password);
-    await driver.pause(5000);
+    await driver.pause(3000);
 }
 
 describe('Breakroom Android - Logout', () => {

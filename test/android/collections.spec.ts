@@ -14,7 +14,7 @@ async function loginAndNavigateToCollections(): Promise<void> {
     await LoginPage.waitForScreen(90000);
     await LoginPage.login(TestUsers.standard.handle, TestUsers.standard.password);
     await driver.pause(3000);
-    await NavigationPage.openDrawerAndTap('Collections');
+    await NavigationPage.openDrawerAndTap('Artist Showcase');
     await CollectionsPage.waitForScreen(15000);
 }
 
