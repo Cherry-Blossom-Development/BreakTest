@@ -98,14 +98,16 @@ export default class BasePage {
      * accepted yet. This taps "Accept These Terms" and waits for the button
      * to disappear before continuing.
      */
-    async dismissEulaIfPresent(timeout = 8000): Promise<void> {
+    async dismissEulaIfPresent(timeout = 30000): Promise<void> {
         try {
             const acceptBtn = $('android=new UiSelector().resourceId("eula-accept-button")');
             const displayed = await acceptBtn.waitForDisplayed({ timeout, reverse: false });
             if (displayed) {
                 await acceptBtn.click();
-                // Wait for the button to disappear (navigates to home)
-                await acceptBtn.waitForDisplayed({ timeout: 10000, reverse: true });
+                // Wait for the accept API call + navigation to complete.
+                // EulaScreen POSTs acceptance to the server before navigating,
+                // so this takes longer on remote servers.
+                await acceptBtn.waitForDisplayed({ timeout, reverse: true });
                 await driver.pause(1000);
             }
         } catch {

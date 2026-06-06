@@ -6,13 +6,9 @@ async function loginAndNavigateToChat(): Promise<void> {
     await driver.terminateApp('com.cherryblossomdev.breakroom');
     await driver.execute('mobile: clearApp', { appId: 'com.cherryblossomdev.breakroom' });
     await driver.activateApp('com.cherryblossomdev.breakroom');
-    await LoginPage.waitForAppReady();
     await LoginPage.login(TestUsers.standard.handle, TestUsers.standard.password);
-
-    // Wait for home screen, then tap the Chat tab
-    await driver.pause(3000);
     const chatTab = await $('android=new UiSelector().resourceId("nav-chat")');
-    await chatTab.waitForDisplayed({ timeout: 10000 });
+    await chatTab.waitForDisplayed({ timeout: 30000 });
     await chatTab.click();
 }
 

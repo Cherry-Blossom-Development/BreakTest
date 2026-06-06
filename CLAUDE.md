@@ -54,9 +54,10 @@ BreakTest/
 │   ├── ensureTestEnv.ts       # Checks/starts Docker test environment
 │   └── testEmailReader.ts     # Reads test email accounts (for verification flows)
 ├── apps/                      # Mobile app binaries (not committed)
-│   ├── breakroom-dev.apk      # Android dev build
+│   ├── breakroom-debug.apk        # Android debug build → http://10.0.2.2:3001/ (local Docker)
+│   ├── breakroom-dev.apk          # Android dev build → https://test.dev.prosaurus.com/
 │   ├── breakroom-productionTest.apk  # Android production-test build
-│   └── Breakroom.app          # iOS app bundle (Mac Mini only)
+│   └── Breakroom.app              # iOS app bundle (Mac Mini only)
 ├── demos/                     # Demo recording setup
 ├── logs/                      # Appium server logs (generated at runtime)
 ├── allure-results/            # Allure reporter output (generated at runtime)
@@ -86,8 +87,10 @@ npm run test:web:headless         # Headless Chrome (CI-friendly)
 npm run test:web:fresh            # Reset DB then run web:dev tests
 
 # Android (requires connected device or emulator + APK in ./apps/)
-npm run test:android              # Android tests against dev
-npm run test:android:dev          # Same as above
+# NOTE: Use TEST_ENV=local (debug APK + local Docker) — remote test servers are often down.
+# Run via Bash tool; Windows cmd.exe does not support the TEST_ENV= prefix syntax.
+TEST_ENV=local npx wdio run ./config/wdio.android.conf.ts
+TEST_ENV=dev npx wdio run ./config/wdio.android.conf.ts
 npm run test:android:production   # Android tests against production
 
 # iOS (Mac Mini only — requires manual Appium start)
@@ -170,13 +173,26 @@ wdio run config/wdio.ios.conf.ts --spec test/ios/login.spec.ts
 
 The `TEST_ENV` variable selects the environment config file:
 
-| `TEST_ENV` | Config file | Base URL | DB source |
-|------------|-------------|----------|-----------|
-| `local` | `.env.test.local` | https://local.prosaurus.com | (not typically synced) |
-| `dev` | `.env.test.dev` | https://test.dev.prosaurus.com | breakroom_dev |
-| `production` | `.env.test.production` | https://test.prosaurus.com | breakroom |
+| `TEST_ENV` | Config file | Web Base URL | Android APK | Backend |
+|------------|-------------|--------------|-------------|---------|
+| `local` | `.env.test.local` | https://test.prosaurus.com:8443 (local Docker) | `breakroom-debug.apk` → `http://10.0.2.2:3001/` | Local Docker |
+| `dev` | `.env.test.dev` | https://test.dev.prosaurus.com | `breakroom-dev.apk` → `https://test.dev.prosaurus.com/` | Dev EC2 |
+| `production` | `.env.test.production` | https://test.prosaurus.com | `breakroom-productionTest.apk` → `https://test.prosaurus.com/` | Production EC2 |
 
 All environments target `breakroom_test` as the test database.
+
+**Recommended for Android on this PC:** `TEST_ENV=local` using the local Docker backend. The dev EC2 backend (`test.dev.prosaurus.com`) is often returning 502, and the production test server (`test.prosaurus.com`) is frequently unreachable.
+
+**Building and installing the debug APK:**
+```bash
+# In the Android repo — active.properties must have: BASE_URL=http://10.0.2.2:3001/
+cd ../Android
+./gradlew assembleDebug
+cp app/build/outputs/apk/debug/app-debug.apk ../BreakTest/apps/breakroom-debug.apk
+
+# Install on the emulator (Appium with fullReset=false may not reinstall automatically)
+adb install -r ../BreakTest/apps/breakroom-debug.apk
+```
 
 ## Test Users
 
@@ -256,9 +272,14 @@ platformName: 'Android'
 appium:deviceName: 'Pixel_7_API_34'    // override with DEVICE_NAME env var
 appium:platformVersion: '14'            // override with PLATFORM_VERSION env var
 appium:automationName: 'UiAutomator2'
-appium:app: './apps/breakroom-dev.apk'  // or breakroom-productionTest.apk for production
+// APK selected by TEST_ENV:
+//   local      → breakroom-debug.apk (http://10.0.2.2:3001/ — local Docker)
+//   dev        → breakroom-dev.apk (https://test.dev.prosaurus.com/)
+//   production → breakroom-productionTest.apk (https://test.prosaurus.com/)
 appium:appPackage: 'com.cherryblossomdev.breakroom'
 appium:appActivity: '.MainActivity'
+appium:noReset: false   // clears app data each session but does NOT reinstall APK
+appium:fullReset: false // set to true only if you need to force a fresh install
 appium:autoGrantPermissions: true
 appium:newCommandTimeout: 240
 ```

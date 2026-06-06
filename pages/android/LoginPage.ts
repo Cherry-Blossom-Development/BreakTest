@@ -26,18 +26,15 @@ class LoginPage extends BasePage {
     }
 
     async waitForScreen(timeout = 30000): Promise<void> {
-        // clearApp resets runtime permissions every cycle. Use mobile: changePermissions
-        // (no adb_shell required) to re-grant notification permission so the OS dialog
-        // never blocks the login screen.
-        try {
-            await driver.execute('mobile: changePermissions', {
-                permissions: ['android.permission.POST_NOTIFICATIONS'],
-                action: 'grant',
-                appPackage: 'com.cherryblossomdev.breakroom',
-            });
-        } catch { /* non-critical — dialog fallback below */ }
+        // clearApp resets runtime permissions each cycle so the OS notification
+        // dialog appears on every fresh launch. Grant it programmatically first,
+        // then click Allow on any dialog that's already visible.
+        await driver.execute('mobile: changePermissions', {
+            permissions: ['android.permission.POST_NOTIFICATIONS'],
+            action: 'grant',
+            appPackage: 'com.cherryblossomdev.breakroom',
+        }).catch(() => {});
 
-        // Also dismiss the dialog in case it appeared before the grant took effect
         try {
             const allowBtn = $('android=new UiSelector().text("Allow")');
             await allowBtn.waitForDisplayed({ timeout: 5000 });
@@ -54,6 +51,16 @@ class LoginPage extends BasePage {
         await this.passwordInput.setValue(password);
         await this.hideKeyboard();
         await this.loginButton.click();
+        // Wait for the login screen to navigate away before handling the EULA.
+        // This decouples EULA detection from API response time — on a remote
+        // server the login call can take much longer than the old hard-coded 8s.
+        try {
+            await this.usernameInput.waitForDisplayed({ timeout: 60000, reverse: true });
+        } catch {
+            // Login screen is still showing — credentials were rejected or the
+            // API returned an error. Return so the caller can assert the error state.
+            return;
+        }
         await this.dismissEulaIfPresent();
     }
 
