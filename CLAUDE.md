@@ -2,7 +2,7 @@
 
 ## Overview
 
-BreakTest is the end-to-end test suite for the Breakroom application. It covers three platforms using [WebdriverIO](https://webdriver.io/) with TypeScript:
+BreakTest is the end-to-end test suite for the Prosaurus application. It covers three platforms using [WebdriverIO](https://webdriver.io/) with TypeScript:
 
 | Platform | Driver | Config |
 |----------|--------|--------|
@@ -130,6 +130,41 @@ npx appium --base-path / --address localhost --port 4723
 ```
 
 Then in a separate terminal: `npm run test:ios`
+
+## Testing Workflow
+
+### Always Report Results to Production
+
+Test results are **always** posted to `https://www.prosaurus.com` (the production Breakroom instance) regardless of which environment the tests run against. This ensures all results — whether from a dev, local, or production test run — are visible in one place at the Prosaurus admin panel (`/admin/test-results`).
+
+The `BREAKROOM_API_URL` in each `.env.test.*` file should always point to `https://www.prosaurus.com/api/test-results`. The `TEST_ENV` variable controls *which app* is being tested; it does not affect where results are sent.
+
+### Full Suite vs. Single-Test Iteration
+
+**Running the full suite:**
+Run all tests sequentially when doing a baseline check or after a potentially broad change. Log all passes and failures.
+
+```bash
+npm run test:web:dev
+npm run test:android:dev
+```
+
+**Fixing broken tests — one at a time:**
+When the full suite reveals failures, fix them one test at a time. Run only the broken spec in a tight loop — make a change, re-run that single spec, observe the result, repeat — until it passes. Do not re-run the full suite until all broken tests have been individually fixed and verified.
+
+Run a single spec file:
+```bash
+# Web
+wdio run config/wdio.web.conf.ts --spec test/web/login.spec.ts
+
+# Android
+wdio run config/wdio.android.conf.ts --spec test/android/login.spec.ts
+
+# iOS (Mac Mini only)
+wdio run config/wdio.ios.conf.ts --spec test/ios/login.spec.ts
+```
+
+**The rule:** If 5 out of 60 tests fail, fix test #1 completely before touching test #2. Only re-run the full suite once all 5 are individually verified green.
 
 ## Environments
 
