@@ -18,12 +18,69 @@ This repo exists on two machines. Each machine runs a subset of the tests:
 
 | Machine | Platform | Web | Android | iOS |
 |---------|----------|-----|---------|-----|
-| **Windows PC** (current) | Windows 11 | Yes | Yes | No |
-| **Mac Mini** | macOS | Yes | Yes | Yes |
+| **Windows PC** | Windows 11 | Yes | Yes | No |
+| **Mac** (current) | macOS | Yes | Yes | Yes |
 
-**iOS tests run exclusively on the Mac Mini.** iOS paths, simulator names, and folder references in the iOS config may need to be verified when working on the Mac Mini (paths to sibling repos may differ).
+**iOS tests run exclusively on the Mac.** The sibling repos are kept up to date on both machines so you can look up app code, selectors, or API contracts from either machine.
 
-The sibling repos are kept up to date on both machines so you can look up app code, selectors, or API contracts from either machine.
+### Mac-Specific Setup
+
+**Development Environment:**
+- Xcode 26.5 (required for iOS builds and simulators)
+- Appium available via `npx appium` (installed as project dependency)
+- iOS Simulator: iPhone 17 Pro (iOS 26.2) is the default test device
+
+**Sibling Repo Paths (Mac):**
+```
+/Users/dcaley/Developer/
+├── BreakTest/           # This repo
+├── Breakroom/           # Web frontend + Express backend
+├── Breakroom-Android/   # Android app (Kotlin)
+└── Breakroom-iPhone/    # iOS app (Swift/SwiftUI)
+```
+
+**Building and Installing the iOS App:**
+```bash
+# In the iPhone repo
+cd ../Breakroom-iPhone
+
+# Generate Xcode project (required after pulling changes)
+xcodegen generate
+
+# Build for simulator
+xcodebuild -scheme Breakroom -configuration Debug \
+  -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
+  build
+
+# Copy built app to BreakTest/apps/ (after successful build)
+cp -R ~/Library/Developer/Xcode/DerivedData/Breakroom-*/Build/Products/Debug-iphonesimulator/Breakroom.app \
+  ../BreakTest/apps/
+```
+
+**Switching iOS Environment:**
+The iOS app environment is controlled by `switch-env.sh` in the iPhone repo:
+```bash
+cd ../Breakroom-iPhone
+./switch-env.sh test         # For E2E tests (local backend + test database)
+./switch-env.sh local-prod   # Local backend + production database
+./switch-env.sh dev          # EC2 dev server
+./switch-env.sh production   # EC2 production server
+```
+
+**Starting iOS Simulator Manually:**
+```bash
+# Boot simulator
+xcrun simctl boot "iPhone 17 Pro"
+
+# Open Simulator app
+open -a Simulator
+```
+
+**Available iOS Simulators:**
+- iPhone 17 Pro (iOS 26.2) — default
+- iPhone 17 Pro Max (iOS 26.2)
+- iPhone Air (iOS 26.2)
+- iPad Pro 13-inch (M5) (iOS 26.2)
 
 ## Project Structure
 
@@ -66,11 +123,13 @@ BreakTest/
 
 ## Related Repositories (Sibling Folders)
 
-| Repo | Platform | Path |
-|------|----------|------|
+| Repo | Platform | Tech Stack |
+|------|----------|------------|
 | `../Breakroom` | Web frontend + Express backend | Vue 3 + Node.js |
-| `../Android` | Native Android app | Kotlin + Jetpack |
-| `../iPhone` | Native iOS app | Swift + UIKit (Mac Mini primary) |
+| `../Breakroom-Android` | Native Android app | Kotlin + Jetpack Compose |
+| `../Breakroom-iPhone` | Native iOS app | Swift 6.0 + SwiftUI |
+
+> **Note:** On the Windows PC, the Android and iPhone repos may be named `../Android` and `../iPhone`. Use the paths listed in the Machine-Specific Context section for your current machine.
 
 When adding or modifying tests, check the corresponding app code for current element IDs, API contracts, and feature implementations.
 
@@ -186,7 +245,8 @@ All environments target `breakroom_test` as the test database.
 **Building and installing the debug APK:**
 ```bash
 # In the Android repo — active.properties must have: BASE_URL=http://10.0.2.2:3001/
-cd ../Android
+# Mac path: ../Breakroom-Android | Windows path: ../Android
+cd ../Breakroom-Android
 ./gradlew assembleDebug
 cp app/build/outputs/apk/debug/app-debug.apk ../BreakTest/apps/breakroom-debug.apk
 
