@@ -14,7 +14,7 @@ class NavigationPage extends BasePage {
         await driver.back();
     }
 
-    // -- Tab bar buttons (use SF Symbol names from SwiftUI Label systemImage) --
+    // -- Tab bar buttons (use SF Symbol names - that's what SwiftUI exposes for tab buttons) --
     get tabBreakroom()      { return this.aid('square.grid.2x2'); }
     get tabChat()           { return this.aid('bubble.left.and.bubble.right'); }
     get tabJobs()           { return this.aid('briefcase'); }
@@ -53,10 +53,11 @@ class NavigationPage extends BasePage {
     async openMenuAndTap(menuItemId: string): Promise<void> {
         await this.menuButton.waitForDisplayed({ timeout: 10000 });
         await this.menuButton.click();
-        await driver.pause(1000); // Wait for menu animation
+        await driver.pause(1500); // Wait for menu animation
         const item = await this.aid(menuItemId);
         await item.waitForDisplayed({ timeout: 5000 });
         await item.click();
+        await driver.pause(2000); // Wait for navigation animation
     }
 
     /**

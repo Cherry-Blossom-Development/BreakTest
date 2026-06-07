@@ -1,5 +1,6 @@
 import LoginPage from '../../pages/ios/LoginPage';
 import NavigationPage from '../../pages/ios/NavigationPage';
+import ChatPage from '../../pages/ios/ChatPage';
 import EulaPage from '../../pages/ios/EulaPage';
 import TestUsers from '../data/testUsers';
 
@@ -110,8 +111,10 @@ describe('Breakroom iOS - Navigation - Menu', () => {
 
     it('should navigate to Chat via menu', async () => {
         await NavigationPage.goToChatViaMenu();
-        await NavigationPage.screenChat.waitForDisplayed({ timeout: 10000 });
-        expect(await NavigationPage.screenChat.isDisplayed()).toBe(true);
+        // Chat screen is verified by presence of room items, not a screenChat identifier
+        await ChatPage.waitForRoomList(15000);
+        const isOnChatScreen = await ChatPage.isRoomListDisplayed();
+        expect(isOnChatScreen).toBe(true);
     });
 });
 
@@ -126,8 +129,10 @@ describe('Breakroom iOS - Navigation - Tab Bar', () => {
     it('should navigate to Chat via tab bar', async () => {
         await NavigationPage.tabChat.waitForDisplayed({ timeout: 10000 });
         await NavigationPage.tabChat.click();
-        await NavigationPage.screenChat.waitForDisplayed({ timeout: 10000 });
-        expect(await NavigationPage.screenChat.isDisplayed()).toBe(true);
+        // Chat screen is verified by presence of room items, not a screenChat identifier
+        await ChatPage.waitForRoomList(15000);
+        const isOnChatScreen = await ChatPage.isRoomListDisplayed();
+        expect(isOnChatScreen).toBe(true);
     });
 
     it('should navigate to Jobs via tab bar', async () => {
