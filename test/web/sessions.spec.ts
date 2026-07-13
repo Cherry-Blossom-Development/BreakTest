@@ -66,27 +66,35 @@ describe('Breakroom Web - Sessions', () => {
     });
 
     // ─── Individual tab content ────────────────────────────────────────────────
+    // Individual (like Band Practice) now opens on a Step 1 upload/record chooser —
+    // these elements only render after "Upload a Recording" is chosen. See
+    // sessions-recording.spec.ts for full coverage of the chooser and live recording.
 
-    it('should show a file input on the Individual tab', async () => {
+    it('should show a file input on the Individual tab after choosing Upload', async () => {
         await SessionsPage.clickTab('Individual');
+        await SessionsPage.chooseMode('upload');
         await SessionsPage.uploadFileInput.waitForExist({ timeout: 5000 });
         expect(await SessionsPage.uploadFileInput.isExisting()).toBe(true);
     });
 
-    it('should show an Upload button on the Individual tab', async () => {
+    it('should show an Upload button on the Individual tab after choosing Upload', async () => {
         await SessionsPage.clickTab('Individual');
+        await SessionsPage.chooseMode('upload');
         await SessionsPage.uploadButton.waitForExist({ timeout: 5000 });
         expect(await SessionsPage.uploadButton.isDisplayed()).toBe(true);
     });
 
     it('should disable the Upload button when no file is selected', async () => {
         await SessionsPage.clickTab('Individual');
+        await SessionsPage.chooseMode('upload');
         await SessionsPage.uploadButton.waitForExist({ timeout: 5000 });
         expect(await SessionsPage.isUploadButtonDisabled()).toBe(true);
     });
 
-    it('should show a session name input on the Individual tab', async () => {
+    it('should show a recording name input after switching to "Rename it"', async () => {
         await SessionsPage.clickTab('Individual');
+        await SessionsPage.chooseMode('upload');
+        await SessionsPage.renameChoiceRenameRadio.click();
         await SessionsPage.sessionNameInput.waitForExist({ timeout: 5000 });
         expect(await SessionsPage.sessionNameInput.isExisting()).toBe(true);
     });

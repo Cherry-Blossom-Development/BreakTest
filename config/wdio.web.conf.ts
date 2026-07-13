@@ -40,9 +40,11 @@ export const config = {
         {
             browserName: 'chrome',
             'goog:chromeOptions': {
+                // Fake mic flags let live-recording tests (Sessions) call getUserMedia
+                // without a real device or an OS permission prompt blocking the run.
                 args: process.env.HEADLESS === 'true'
-                    ? ['--headless', '--disable-gpu', '--ignore-certificate-errors']
-                    : ['--ignore-certificate-errors'],
+                    ? ['--headless', '--disable-gpu', '--ignore-certificate-errors', '--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream']
+                    : ['--ignore-certificate-errors', '--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream'],
             },
             acceptInsecureCerts: true,
         },
