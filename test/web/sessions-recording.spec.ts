@@ -64,7 +64,7 @@ describe('Breakroom Web - Sessions New Recording (upload/record chooser)', () =>
 
     it('should enable Upload and display the filename once a file is chosen', async () => {
         await SessionsPage.chooseMode('upload');
-        await SessionsPage.uploadFileInput.setValue(FIXTURE_AUDIO);
+        await SessionsPage.chooseFile(FIXTURE_AUDIO);
         expect(await SessionsPage.fileLabel.getText()).toBe('test-recording.wav');
         expect(await SessionsPage.isUploadButtonDisabled()).toBe(false);
     });

@@ -1,4 +1,5 @@
 import path from 'path';
+import { execSync } from 'child_process';
 import dotenv from 'dotenv';
 import BreakroomReporter from '../reporters/BreakroomReporter';
 
@@ -7,6 +8,28 @@ const rootDir = path.resolve(__dirname, '..');
 // Load environment variables — TEST_ENV selects the target environment (dev | production)
 const testEnv = process.env.TEST_ENV || 'dev';
 dotenv.config({ path: path.join(rootDir, `.env.test.${testEnv}`) });
+
+// WebdriverIO's built-in driver manager detects the installed Chrome version by shelling
+// out to `chrome.exe --version`. If Chrome is already running under the same profile,
+// that command just re-activates the existing window and prints nothing — detection
+// silently fails and wdio falls back to the "stable" chromedriver release, which can be
+// newer than what's actually installed ("session not created: ... only supports Chrome
+// version X"). Reading the version from the binary's file metadata sidesteps that.
+function detectInstalledChromeVersion(): string | undefined {
+    if (process.platform !== 'win32') return undefined;
+    try {
+        const chromePath = 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe';
+        const output = execSync(
+            `powershell -NoProfile -Command "(Get-Item '${chromePath}').VersionInfo.ProductVersion"`,
+            { encoding: 'utf8' }
+        );
+        return output.trim() || undefined;
+    } catch {
+        return undefined;
+    }
+}
+
+const chromeVersion = detectInstalledChromeVersion();
 
 export const config = {
     //
@@ -39,6 +62,7 @@ export const config = {
     capabilities: [
         {
             browserName: 'chrome',
+            ...(chromeVersion ? { browserVersion: chromeVersion } : {}),
             'goog:chromeOptions': {
                 // Fake mic flags let live-recording tests (Sessions) call getUserMedia
                 // without a real device or an OS permission prompt blocking the run.

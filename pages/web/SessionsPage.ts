@@ -125,11 +125,13 @@ class SessionsPage extends BasePage {
 
     /** Clicks "Upload a Recording" or "Record a Live Session" on the Step 1 chooser. */
     async chooseMode(mode: 'upload' | 'record'): Promise<void> {
+        // Exact match matters here: "Upload a Recording" contains the substring "Record",
+        // so a loose .includes('Record') check for the record mode also matches upload.
+        const targetLabel = mode === 'upload' ? 'Upload a Recording' : 'Record a Live Session';
         const buttons = await this.recordModeButtons;
         for (const btn of buttons) {
             const label = await btn.$('.record-mode-label').getText();
-            const matches = mode === 'upload' ? label.includes('Upload') : label.includes('Record');
-            if (matches) {
+            if (label.trim() === targetLabel) {
                 await btn.click();
                 return;
             }
@@ -137,12 +139,24 @@ class SessionsPage extends BasePage {
         throw new Error(`Record mode button for "${mode}" not found`);
     }
 
-    /** Finds a row in the Your Sessions table by its session name text. */
+    /** Selects a local file on the hidden (display:none) file input. WebdriverIO's
+     *  interactability check rejects display:none elements even though the underlying
+     *  file-upload command works fine, so the input is unhidden just long enough to set it. */
+    async chooseFile(filePath: string): Promise<void> {
+        const input = await this.uploadFileInput;
+        await browser.execute((el: HTMLElement) => { el.style.display = 'block'; }, input);
+        await input.setValue(filePath);
+        await browser.execute((el: HTMLElement) => { el.style.display = ''; }, input);
+    }
+
+    /** Finds a row in the Your Sessions table by its session name. The name lives in an
+     *  inline-edit <input> (for renaming in place), so its value — not the row's
+     *  rendered text — is what has to be checked. */
     async findSessionRow(name: string) {
         const rows = await this.sessionRows;
         for (const row of rows) {
-            const text = await row.getText();
-            if (text.includes(name)) {
+            const nameInput = await row.$('input.inline-edit');
+            if ((await nameInput.isExisting()) && (await nameInput.getValue()) === name) {
                 return row;
             }
         }
