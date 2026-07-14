@@ -12,8 +12,10 @@ class SessionsPage extends BasePage {
     get tabPicker() { return this.aid('sessionsTabPicker'); }
 
     // -- Recording controls --
+    get uploadButton() { return this.aid('sessionsUploadButton'); }
     get recordButton() { return this.aid('sessionsRecordButton'); }
     get stopButton() { return this.aid('sessionsStopButton'); }
+    get recordingTimer() { return this.aid('sessionsRecordingTimer'); }
     get nowPlayingBar() { return this.aid('sessionsNowPlayingBar'); }
     get emptyState() { return this.aid('sessionsEmptyState'); }
 
