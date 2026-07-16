@@ -18,68 +18,18 @@ async function loginAndNavigateToBreakroom(): Promise<void> {
         arguments: ['-CLEAR_AUTH_STATE', 'YES', '-TEST_API_URL', TEST_API_URL],
     });
 
-    await LoginPage.waitForAppReady();
+    // Wait for login screen and login
+    await LoginPage.waitForScreen(90000);
     await LoginPage.login(TestUsers.standard.handle, TestUsers.standard.password);
+    await driver.pause(5000);
 
-    // Wait for login to complete
-    await driver.pause(8000);
+    // Accept EULA if it appears after login
+    await EulaPage.acceptIfDisplayed();
 
-    // Check if login succeeded
-    let loginGone = false;
-    try {
-        const usernameField = await $('~usernameField');
-        const isVisible = await usernameField.isDisplayed().catch(() => false);
-        loginGone = !isVisible;
-    } catch {
-        loginGone = true;
-    }
+    // Wait for main app to fully load after login/EULA
+    await driver.pause(3000);
 
-    if (!loginGone) {
-        await driver.pause(5000);
-        try {
-            const usernameField = await $('~usernameField');
-            loginGone = !(await usernameField.isDisplayed().catch(() => false));
-        } catch {
-            loginGone = true;
-        }
-    }
-
-    if (!loginGone) {
-        throw new Error('Login failed - still on login screen');
-    }
-
-    // Wait for main app or EULA
-    let foundMainApp = false;
-    for (let attempt = 0; attempt < 15; attempt++) {
-        await driver.pause(2000);
-
-        // Check for EULA accept button
-        const eulaButton = await $('~acceptEulaButton');
-        const eulaVisible = await eulaButton.isDisplayed().catch(() => false);
-        if (eulaVisible) {
-            console.log('EULA accept button found, clicking...');
-            await eulaButton.click();
-            await driver.pause(3000);
-            continue;
-        }
-
-        // Check for Breakroom tab
-        const breakroomTab = await $('~square.grid.2x2');
-        const breakroomVisible = await breakroomTab.isDisplayed().catch(() => false);
-        if (breakroomVisible) {
-            console.log('Main app loaded, Breakroom tab found');
-            foundMainApp = true;
-            break;
-        }
-
-        console.log(`Attempt ${attempt + 1}/15: Waiting for main app...`);
-    }
-
-    if (!foundMainApp) {
-        throw new Error('Main app never loaded after login');
-    }
-
-    // Navigate to Breakroom tab
+    // Navigate to Breakroom tab (home screen should already be there)
     await WidgetPage.navigateToBreakroom();
 }
 

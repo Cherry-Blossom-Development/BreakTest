@@ -57,7 +57,7 @@ export const config = {
             'appium:processArguments': {
                 args: [
                     '-TEST_API_URL',
-                    process.env.TEST_API_URL || (testEnv === 'production' ? 'https://www.prosaurus.com' : 'https://dev.prosaurus.com'),
+                    process.env.TEST_API_URL || (testEnv === 'production' ? 'https://www.prosaurus.com' : testEnv === 'local' ? 'http://localhost:3001' : 'https://dev.prosaurus.com'),
                     '-CLEAR_AUTH_STATE',
                     'YES',
                 ],

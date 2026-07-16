@@ -23,6 +23,9 @@ async function resetAndLogin(handle: string, password: string): Promise<void> {
 
     // Accept EULA if it appears after login
     await EulaPage.acceptIfDisplayed();
+
+    // Wait for main app to fully load after login/EULA
+    await driver.pause(3000);
 }
 
 describe('Breakroom iOS - Logout', () => {
@@ -98,6 +101,9 @@ describe('Breakroom iOS - Logout', () => {
 
         // Accept EULA if it appears after login
         await EulaPage.acceptIfDisplayed();
+
+        // Wait for main app to fully load after login/EULA
+        await driver.pause(3000);
 
         await LogoutPage.logout();
         await driver.pause(3000);

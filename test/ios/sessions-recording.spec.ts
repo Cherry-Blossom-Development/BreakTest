@@ -37,11 +37,14 @@ async function freshLogin(handle: string, password: string): Promise<void> {
 
     // Accept EULA if it appears after login
     await EulaPage.acceptIfDisplayed();
+
+    // Wait for main app to fully load after login/EULA
+    await driver.pause(3000);
 }
 
 async function navigateToSessions(): Promise<void> {
     // Navigate to Tool Shed tab
-    await NavigationPage.tabToolShed.waitForDisplayed({ timeout: 10000 });
+    await NavigationPage.tabToolShed.waitForDisplayed({ timeout: 20000 });
     await NavigationPage.tabToolShed.click();
     await NavigationPage.screenToolShed.waitForDisplayed({ timeout: 10000 });
     await driver.pause(2000); // Wait for features to load
