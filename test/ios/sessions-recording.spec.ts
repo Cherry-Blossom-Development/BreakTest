@@ -1,3 +1,4 @@
+import mysql from 'mysql2/promise';
 import LoginPage from '../../pages/ios/LoginPage';
 import NavigationPage from '../../pages/ios/NavigationPage';
 import SessionsPage from '../../pages/ios/SessionsPage';
@@ -6,6 +7,19 @@ import TestUsers from '../data/testUsers';
 
 const BUNDLE_ID = 'com.cherryblossomdev.Breakroom';
 const TEST_API_URL = process.env.TEST_API_URL || 'https://dev.prosaurus.com';
+
+// Clean up saved sessions directly from the test DB to avoid leaving test data behind
+async function deleteSessionByName(name: string): Promise<void> {
+    const conn = await mysql.createConnection({
+        host: process.env.TEST_DB_HOST,
+        port: Number(process.env.TEST_DB_PORT),
+        user: process.env.TEST_DB_USER,
+        password: process.env.TEST_DB_PASS,
+        database: process.env.TEST_DB_NAME,
+    });
+    await conn.execute('DELETE FROM sessions WHERE name = ?', [name]);
+    await conn.end();
+}
 
 async function freshLogin(handle: string, password: string): Promise<void> {
     try {
@@ -181,6 +195,11 @@ describe('Breakroom iOS - Sessions Recording - Save Recording', () => {
         await freshLogin(TestUsers.standard.handle, TestUsers.standard.password);
         await navigateToSessions();
         await SessionsPage.waitForScreen();
+    });
+
+    after(async () => {
+        // Clean up the saved session from the database
+        await deleteSessionByName(testSessionName);
     });
 
     it('should record, name, and save a session', async () => {
