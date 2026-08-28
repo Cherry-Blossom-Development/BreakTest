@@ -1,7 +1,7 @@
 -- =============================================================================
 -- Test Database Schema
--- Generated from local database: breakroom
--- Generated at: 2026-07-15T18:35:42.663Z
+-- Generated from dev database: breakroom_dev
+-- Generated at: 2026-08-28T17:30:41.599Z
 --
 -- Blacklisted tables (not included):
 --   - test_cases
@@ -16,14 +16,21 @@ SET FOREIGN_KEY_CHECKS = 0;
 -- Drop existing tables (in reverse dependency order)
 -- =============================================================================
 
+DROP TABLE IF EXISTS `session_comments`;
 DROP TABLE IF EXISTS `blog_comments`;
+DROP TABLE IF EXISTS `haulonaut_pilot_inventory`;
+DROP TABLE IF EXISTS `haulonaut_pilots`;
+DROP TABLE IF EXISTS `haulonaut_visited_sectors`;
 DROP TABLE IF EXISTS `notifications`;
+DROP TABLE IF EXISTS `shortlist_sessions`;
 DROP TABLE IF EXISTS `ticket_projects`;
-DROP TABLE IF EXISTS `band_page_songs`;
-DROP TABLE IF EXISTS `custom_domains`;
 DROP TABLE IF EXISTS `employees`;
 DROP TABLE IF EXISTS `events`;
-DROP TABLE IF EXISTS `mashup_sources`;
+DROP TABLE IF EXISTS `game_settings`;
+DROP TABLE IF EXISTS `game_users`;
+DROP TABLE IF EXISTS `haulonaut_sector_features`;
+DROP TABLE IF EXISTS `haulonaut_sector_links`;
+DROP TABLE IF EXISTS `haulonaut_sectors`;
 DROP TABLE IF EXISTS `notification_type_groups`;
 DROP TABLE IF EXISTS `notification_type_users`;
 DROP TABLE IF EXISTS `notification_types`;
@@ -33,6 +40,7 @@ DROP TABLE IF EXISTS `projects`;
 DROP TABLE IF EXISTS `scheduled_chat_messages`;
 DROP TABLE IF EXISTS `session_ratings`;
 DROP TABLE IF EXISTS `sessions`;
+DROP TABLE IF EXISTS `shortlists`;
 DROP TABLE IF EXISTS `ticket_comments`;
 DROP TABLE IF EXISTS `tickets`;
 DROP TABLE IF EXISTS `user_groups`;
@@ -41,13 +49,12 @@ DROP TABLE IF EXISTS `user_post_last_read`;
 DROP TABLE IF EXISTS `user_skills`;
 DROP TABLE IF EXISTS `users_rooms`;
 DROP TABLE IF EXISTS `account_deletion_requests`;
+DROP TABLE IF EXISTS `analytics_feature_usage`;
 DROP TABLE IF EXISTS `analytics_logins`;
+DROP TABLE IF EXISTS `analytics_marketing_pageviews`;
 DROP TABLE IF EXISTS `analytics_visits`;
 DROP TABLE IF EXISTS `audio_defaults`;
-DROP TABLE IF EXISTS `band_email_invites`;
-DROP TABLE IF EXISTS `band_member_instruments`;
 DROP TABLE IF EXISTS `band_members`;
-DROP TABLE IF EXISTS `band_pages`;
 DROP TABLE IF EXISTS `band_setlists`;
 DROP TABLE IF EXISTS `bands`;
 DROP TABLE IF EXISTS `blog_posts`;
@@ -61,13 +68,18 @@ DROP TABLE IF EXISTS `companies`;
 DROP TABLE IF EXISTS `content_filter_keywords`;
 DROP TABLE IF EXISTS `content_flags`;
 DROP TABLE IF EXISTS `creation_logs`;
+DROP TABLE IF EXISTS `custom_domains`;
 DROP TABLE IF EXISTS `event_types`;
 DROP TABLE IF EXISTS `feature_users`;
 DROP TABLE IF EXISTS `features`;
 DROP TABLE IF EXISTS `friends`;
 DROP TABLE IF EXISTS `gallery_artworks`;
+DROP TABLE IF EXISTS `game_admins`;
+DROP TABLE IF EXISTS `game_instances`;
+DROP TABLE IF EXISTS `games`;
 DROP TABLE IF EXISTS `group_permissions`;
 DROP TABLE IF EXISTS `groups`;
+DROP TABLE IF EXISTS `haulonaut_items`;
 DROP TABLE IF EXISTS `instruments`;
 DROP TABLE IF EXISTS `lyrics`;
 DROP TABLE IF EXISTS `permissions`;
@@ -78,17 +90,14 @@ DROP TABLE IF EXISTS `system_emails`;
 DROP TABLE IF EXISTS `user_blocks`;
 DROP TABLE IF EXISTS `user_blog`;
 DROP TABLE IF EXISTS `user_collections`;
-DROP TABLE IF EXISTS `user_devices`;
 DROP TABLE IF EXISTS `user_fcm_tokens`;
 DROP TABLE IF EXISTS `user_gallery`;
 DROP TABLE IF EXISTS `user_jobs`;
-DROP TABLE IF EXISTS `user_news_preferences`;
+DROP TABLE IF EXISTS `user_payment_connect`;
+DROP TABLE IF EXISTS `user_payment_customers`;
 DROP TABLE IF EXISTS `user_settings`;
-DROP TABLE IF EXISTS `user_shipping_settings`;
 DROP TABLE IF EXISTS `user_shortcuts`;
 DROP TABLE IF EXISTS `user_storefront`;
-DROP TABLE IF EXISTS `user_stripe_connect`;
-DROP TABLE IF EXISTS `user_stripe_customers`;
 DROP TABLE IF EXISTS `user_subscriptions`;
 DROP TABLE IF EXISTS `users`;
 
@@ -118,17 +127,25 @@ CREATE TABLE `users` (
   `password_reset_token` varchar(64) DEFAULT NULL,
   `password_reset_expires_at` timestamp NULL DEFAULT NULL,
   `is_flag_banned` tinyint(1) DEFAULT 0,
-  `is_internal` tinyint(1) NOT NULL DEFAULT 0,
   `signup_platform` enum('web','android','ios') NOT NULL DEFAULT 'web',
+  `is_internal` tinyint(1) NOT NULL DEFAULT 0,
+  `signup_visitor_id` varchar(64) DEFAULT NULL,
+  `real_user_number` int(11) DEFAULT NULL,
+  `alternate_email` varchar(255) DEFAULT NULL,
+  `alternate_email_verified` tinyint(1) NOT NULL DEFAULT 0,
+  `alternate_email_verification_token` varchar(64) DEFAULT NULL,
+  `alternate_email_verification_expires_at` timestamp NULL DEFAULT NULL,
+  `send_notices_to_alternate_email` tinyint(1) NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
   UNIQUE KEY `handle` (`handle`),
-  UNIQUE KEY `email` (`email`)
-) ENGINE=InnoDB AUTO_INCREMENT=63 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  UNIQUE KEY `email` (`email`),
+  UNIQUE KEY `real_user_number` (`real_user_number`)
+) ENGINE=InnoDB AUTO_INCREMENT=86 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `user_subscriptions` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `user_id` int(11) NOT NULL,
-  `platform` enum('google','apple','promo','stripe') NOT NULL,
+  `platform` enum('google','apple','promo','stripe','square','paypal') NOT NULL,
   `platform_subscription_id` varchar(500) NOT NULL,
   `status` enum('active','cancelled','expired','grace_period') NOT NULL DEFAULT 'active',
   `expires_at` datetime DEFAULT NULL,
@@ -137,33 +154,14 @@ CREATE TABLE `user_subscriptions` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `user_id` (`user_id`),
   CONSTRAINT `user_subscriptions_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=19 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
-CREATE TABLE `user_stripe_customers` (
-  `user_id` int(11) NOT NULL,
-  `stripe_customer_id` varchar(255) NOT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  PRIMARY KEY (`user_id`),
-  CONSTRAINT `user_stripe_customers_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE `user_stripe_connect` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `user_id` int(11) NOT NULL,
-  `stripe_account_id` varchar(255) NOT NULL,
-  `onboarding_complete` tinyint(1) NOT NULL DEFAULT 0,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `user_id` (`user_id`),
-  CONSTRAINT `user_stripe_connect_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 CREATE TABLE `user_storefront` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `user_id` int(11) NOT NULL,
   `store_url` varchar(100) DEFAULT NULL,
   `page_title` varchar(255) DEFAULT NULL,
+  `is_public` tinyint(1) DEFAULT 0,
   `content` longtext DEFAULT NULL,
   `settings` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`settings`)),
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
@@ -172,8 +170,9 @@ CREATE TABLE `user_storefront` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `user_id` (`user_id`),
   UNIQUE KEY `store_url` (`store_url`),
+  KEY `idx_storefront_public` (`is_public`,`updated_at`),
   CONSTRAINT `user_storefront_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=33 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `user_shortcuts` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -188,25 +187,7 @@ CREATE TABLE `user_shortcuts` (
   KEY `idx_user_shortcuts_user` (`user_id`),
   KEY `idx_user_shortcuts_order` (`user_id`,`sort_order`),
   CONSTRAINT `user_shortcuts_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=32 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE `user_shipping_settings` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `user_id` int(11) NOT NULL,
-  `address_line1` varchar(255) DEFAULT NULL,
-  `address_line2` varchar(255) DEFAULT NULL,
-  `city` varchar(100) DEFAULT NULL,
-  `state_region` varchar(100) DEFAULT NULL,
-  `zip` varchar(20) DEFAULT NULL,
-  `country` varchar(100) NOT NULL DEFAULT 'US',
-  `ship_destinations` varchar(50) NOT NULL DEFAULT 'us_only',
-  `processing_time` varchar(50) NOT NULL DEFAULT '1_2_days',
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `user_id` (`user_id`),
-  CONSTRAINT `user_shipping_settings_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=21 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `user_settings` (
   `user_id` int(11) NOT NULL,
@@ -220,13 +201,30 @@ CREATE TABLE `user_settings` (
   CONSTRAINT `user_settings_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE `user_news_preferences` (
+CREATE TABLE `user_payment_customers` (
   `user_id` int(11) NOT NULL,
-  `enabled_sources` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL CHECK (json_valid(`enabled_sources`)),
-  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `processor` enum('stripe','square','paypal') NOT NULL,
+  `processor_customer_id` varchar(255) NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`user_id`),
-  CONSTRAINT `fk_news_prefs_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+  CONSTRAINT `user_payment_customers_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `user_payment_connect` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `user_id` int(11) NOT NULL,
+  `processor` enum('stripe','square','paypal') NOT NULL,
+  `processor_account_id` varchar(255) NOT NULL,
+  `access_token_encrypted` text DEFAULT NULL,
+  `refresh_token_encrypted` text DEFAULT NULL,
+  `token_expires_at` datetime DEFAULT NULL,
+  `onboarding_complete` tinyint(1) NOT NULL DEFAULT 0,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `user_id` (`user_id`),
+  CONSTRAINT `user_payment_connect_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `user_jobs` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -244,7 +242,7 @@ CREATE TABLE `user_jobs` (
   KEY `idx_user_jobs_user_id` (`user_id`),
   KEY `idx_user_jobs_start_date` (`start_date`),
   CONSTRAINT `user_jobs_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=22 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `user_gallery` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -253,13 +251,15 @@ CREATE TABLE `user_gallery` (
   `gallery_name` varchar(255) NOT NULL,
   `bio` text DEFAULT NULL,
   `settings` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`settings`)),
+  `is_public` tinyint(1) DEFAULT 0,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   PRIMARY KEY (`id`),
   UNIQUE KEY `idx_gallery_url` (`gallery_url`),
   UNIQUE KEY `idx_gallery_user_id` (`user_id`),
+  KEY `idx_gallery_public` (`is_public`,`updated_at`),
   CONSTRAINT `user_gallery_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `user_fcm_tokens` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -271,23 +271,7 @@ CREATE TABLE `user_fcm_tokens` (
   UNIQUE KEY `uq_token` (`fcm_token`),
   KEY `user_id` (`user_id`),
   CONSTRAINT `user_fcm_tokens_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=544 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE `user_devices` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `user_id` int(11) NOT NULL,
-  `device_token` varchar(64) NOT NULL,
-  `system_name` varchar(255) NOT NULL,
-  `user_name` varchar(255) DEFAULT NULL,
-  `platform` varchar(16) NOT NULL DEFAULT 'web',
-  `is_emulator` tinyint(1) NOT NULL DEFAULT 0,
-  `device_info` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`device_info`)),
-  `first_seen_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `last_seen_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `uq_user_device` (`user_id`,`device_token`),
-  CONSTRAINT `user_devices_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=124 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=166 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `user_collections` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -300,7 +284,7 @@ CREATE TABLE `user_collections` (
   PRIMARY KEY (`id`),
   KEY `idx_user_collections_user` (`user_id`),
   CONSTRAINT `user_collections_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=17 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `user_blog` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -313,7 +297,7 @@ CREATE TABLE `user_blog` (
   UNIQUE KEY `idx_blog_url` (`blog_url`),
   KEY `idx_user_id` (`user_id`),
   CONSTRAINT `user_blog_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=55 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=71 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `user_blocks` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -325,7 +309,7 @@ CREATE TABLE `user_blocks` (
   KEY `blocked_user_id` (`blocked_user_id`),
   CONSTRAINT `user_blocks_ibfk_1` FOREIGN KEY (`blocker_user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
   CONSTRAINT `user_blocks_ibfk_2` FOREIGN KEY (`blocked_user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `system_emails` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -339,7 +323,7 @@ CREATE TABLE `system_emails` (
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   PRIMARY KEY (`id`),
   UNIQUE KEY `email_key` (`email_key`)
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `songs` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -356,7 +340,7 @@ CREATE TABLE `songs` (
   KEY `idx_songs_user_id` (`user_id`),
   KEY `idx_songs_visibility` (`visibility`,`created_at`),
   CONSTRAINT `songs_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=20 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=18 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `song_collaborators` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -381,7 +365,7 @@ CREATE TABLE `skills` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `name` (`name`),
   KEY `idx_skills_name` (`name`)
-) ENGINE=InnoDB AUTO_INCREMENT=48 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=24 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `permissions` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -425,6 +409,18 @@ CREATE TABLE `instruments` (
   UNIQUE KEY `name` (`name`)
 ) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+CREATE TABLE `haulonaut_items` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `item_key` varchar(32) NOT NULL,
+  `name` varchar(64) NOT NULL,
+  `category` varchar(32) NOT NULL,
+  `description` text DEFAULT NULL,
+  `base_price` int(11) NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `item_key` (`item_key`)
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE `groups` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `name` varchar(64) NOT NULL,
@@ -445,6 +441,41 @@ CREATE TABLE `group_permissions` (
   CONSTRAINT `group_permissions_ibfk_2` FOREIGN KEY (`permission_id`) REFERENCES `permissions` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE `games` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `game_key` varchar(64) NOT NULL,
+  `name` varchar(128) NOT NULL,
+  `description` text DEFAULT NULL,
+  `is_active` tinyint(1) DEFAULT 1,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `game_key` (`game_key`)
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `game_instances` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `game_id` int(11) NOT NULL,
+  `name` varchar(128) NOT NULL,
+  `status` enum('setup','active','ended') NOT NULL DEFAULT 'setup',
+  `started_at` timestamp NULL DEFAULT NULL,
+  `ended_at` timestamp NULL DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `idx_game_instances_game` (`game_id`),
+  CONSTRAINT `game_instances_ibfk_1` FOREIGN KEY (`game_id`) REFERENCES `games` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `game_admins` (
+  `game_id` int(11) NOT NULL,
+  `user_id` int(11) NOT NULL,
+  `added_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`game_id`,`user_id`),
+  KEY `user_id` (`user_id`),
+  CONSTRAINT `game_admins_ibfk_1` FOREIGN KEY (`game_id`) REFERENCES `games` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `game_admins_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE `gallery_artworks` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `user_id` int(11) NOT NULL,
@@ -460,7 +491,7 @@ CREATE TABLE `gallery_artworks` (
   KEY `idx_gallery_artworks_user_id` (`user_id`),
   KEY `idx_gallery_artworks_published` (`user_id`,`is_published`,`created_at`),
   CONSTRAINT `gallery_artworks_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=50 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `friends` (
   `user_id` int(11) NOT NULL,
@@ -486,7 +517,7 @@ CREATE TABLE `features` (
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   PRIMARY KEY (`id`),
   UNIQUE KEY `feature_key` (`feature_key`)
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `feature_users` (
   `feature_id` int(11) NOT NULL,
@@ -506,7 +537,25 @@ CREATE TABLE `event_types` (
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`id`),
   UNIQUE KEY `type` (`type`)
-) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `custom_domains` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `user_id` int(11) NOT NULL,
+  `domain` varchar(255) NOT NULL,
+  `status` enum('pending_dns','provisioning','active','failed','removing') NOT NULL DEFAULT 'pending_dns',
+  `verification_attempts` int(11) NOT NULL DEFAULT 0,
+  `last_checked_at` timestamp NULL DEFAULT NULL,
+  `error_message` varchar(500) DEFAULT NULL,
+  `activated_at` timestamp NULL DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `idx_custom_domains_domain` (`domain`),
+  KEY `user_id` (`user_id`),
+  KEY `idx_custom_domains_status` (`status`),
+  CONSTRAINT `custom_domains_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 CREATE TABLE `creation_logs` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -525,7 +574,7 @@ CREATE TABLE `creation_logs` (
   KEY `idx_cl_user` (`user_id`),
   KEY `idx_cl_created_at` (`created_at`),
   CONSTRAINT `creation_logs_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
-) ENGINE=InnoDB AUTO_INCREMENT=199 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `content_flags` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -548,7 +597,7 @@ CREATE TABLE `content_flags` (
   CONSTRAINT `content_flags_ibfk_1` FOREIGN KEY (`flagged_by_user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL,
   CONSTRAINT `content_flags_ibfk_2` FOREIGN KEY (`content_author_id`) REFERENCES `users` (`id`) ON DELETE SET NULL,
   CONSTRAINT `content_flags_ibfk_3` FOREIGN KEY (`reviewed_by_user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
-) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `content_filter_keywords` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -574,7 +623,7 @@ CREATE TABLE `companies` (
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 CREATE TABLE `collection_items` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -599,7 +648,7 @@ CREATE TABLE `collection_items` (
   KEY `idx_collection_id` (`collection_id`),
   KEY `idx_user_id` (`user_id`),
   CONSTRAINT `collection_items_ibfk_1` FOREIGN KEY (`collection_id`) REFERENCES `user_collections` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=131 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `chat_rooms` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -636,7 +685,7 @@ CREATE TABLE `chat_messages` (
   KEY `idx_chat_messages_created_at` (`created_at`),
   CONSTRAINT `chat_messages_ibfk_1` FOREIGN KEY (`room_id`) REFERENCES `chat_rooms` (`id`) ON DELETE CASCADE,
   CONSTRAINT `chat_messages_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=539 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=299 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `breakroom_updates` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -646,7 +695,7 @@ CREATE TABLE `breakroom_updates` (
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`id`),
   KEY `idx_created_at` (`created_at`)
-) ENGINE=InnoDB AUTO_INCREMENT=61 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=59 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `breakroom_blocks` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -664,7 +713,7 @@ CREATE TABLE `breakroom_blocks` (
   PRIMARY KEY (`id`),
   KEY `idx_breakroom_blocks_user` (`user_id`),
   CONSTRAINT `breakroom_blocks_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=397 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=515 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 CREATE TABLE `breakroom_block_positions` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -678,7 +727,7 @@ CREATE TABLE `breakroom_block_positions` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `uq_block_col` (`block_id`,`col_count`),
   CONSTRAINT `breakroom_block_positions_ibfk_1` FOREIGN KEY (`block_id`) REFERENCES `breakroom_blocks` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=663 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=474 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 CREATE TABLE `blog_posts` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -694,7 +743,7 @@ CREATE TABLE `blog_posts` (
   KEY `idx_blog_posts_user_id` (`user_id`),
   KEY `idx_blog_posts_created_at` (`created_at`),
   CONSTRAINT `blog_posts_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=27 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=18 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `bands` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -705,7 +754,7 @@ CREATE TABLE `bands` (
   PRIMARY KEY (`id`),
   KEY `fk_bands_created_by` (`created_by`),
   CONSTRAINT `fk_bands_created_by` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 CREATE TABLE `band_setlists` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -720,22 +769,7 @@ CREATE TABLE `band_setlists` (
   KEY `idx_band_setlists_band` (`band_id`),
   CONSTRAINT `fk_band_setlists_band` FOREIGN KEY (`band_id`) REFERENCES `bands` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_band_setlists_created_by` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
-CREATE TABLE `band_pages` (
-  `band_id` int(11) NOT NULL,
-  `band_url` varchar(100) DEFAULT NULL,
-  `story` text DEFAULT NULL,
-  `background_photo_key` varchar(500) DEFAULT NULL,
-  `is_published` tinyint(1) NOT NULL DEFAULT 0,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-  `favicon_key` varchar(500) DEFAULT NULL,
-  `background_color` varchar(7) DEFAULT NULL,
-  PRIMARY KEY (`band_id`),
-  UNIQUE KEY `band_url` (`band_url`),
-  CONSTRAINT `fk_bp_band` FOREIGN KEY (`band_id`) REFERENCES `bands` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 CREATE TABLE `band_members` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -753,36 +787,7 @@ CREATE TABLE `band_members` (
   CONSTRAINT `fk_band_members_band` FOREIGN KEY (`band_id`) REFERENCES `bands` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_band_members_invited_by` FOREIGN KEY (`invited_by`) REFERENCES `users` (`id`) ON DELETE SET NULL,
   CONSTRAINT `fk_band_members_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
-CREATE TABLE `band_member_instruments` (
-  `band_id` int(11) NOT NULL,
-  `user_id` int(11) NOT NULL,
-  `instrument_id` int(11) NOT NULL,
-  PRIMARY KEY (`band_id`,`user_id`,`instrument_id`),
-  KEY `fk_bmi_user` (`user_id`),
-  KEY `fk_bmi_instrument` (`instrument_id`),
-  CONSTRAINT `fk_bmi_band` FOREIGN KEY (`band_id`) REFERENCES `bands` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_bmi_instrument` FOREIGN KEY (`instrument_id`) REFERENCES `instruments` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_bmi_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
-
-CREATE TABLE `band_email_invites` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `band_id` int(11) NOT NULL,
-  `invited_by` int(11) NOT NULL,
-  `email` varchar(255) NOT NULL,
-  `token` varchar(36) NOT NULL,
-  `status` enum('pending','accepted','expired') NOT NULL DEFAULT 'pending',
-  `expires_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `token` (`token`),
-  KEY `fk_bei_band` (`band_id`),
-  KEY `fk_bei_user` (`invited_by`),
-  CONSTRAINT `fk_bei_band` FOREIGN KEY (`band_id`) REFERENCES `bands` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_bei_user` FOREIGN KEY (`invited_by`) REFERENCES `users` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=14 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 CREATE TABLE `audio_defaults` (
   `user_id` int(11) NOT NULL,
@@ -792,12 +797,6 @@ CREATE TABLE `audio_defaults` (
   `playback_volume` decimal(3,2) NOT NULL DEFAULT 0.75,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-  `wav_playback_boost` float NOT NULL DEFAULT 3.33,
-  `recording_normalization` float NOT NULL DEFAULT 0.9,
-  `bitrate` int(11) NOT NULL DEFAULT 256000,
-  `mashup_backing_volume` float NOT NULL DEFAULT 1,
-  `mashup_new_volume` float NOT NULL DEFAULT 1,
-  `soft_limiter` tinyint(1) NOT NULL DEFAULT 0,
   PRIMARY KEY (`user_id`),
   CONSTRAINT `audio_defaults_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -813,7 +812,18 @@ CREATE TABLE `analytics_visits` (
   KEY `idx_visits_created` (`created_at`),
   KEY `idx_visits_platform` (`platform`),
   CONSTRAINT `analytics_visits_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
-) ENGINE=InnoDB AUTO_INCREMENT=44 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `analytics_marketing_pageviews` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `page` varchar(64) NOT NULL,
+  `visitor_id` varchar(64) NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `idx_marketing_pageviews_created` (`created_at`),
+  KEY `idx_marketing_pageviews_page` (`page`),
+  KEY `idx_marketing_pageviews_visitor` (`visitor_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `analytics_logins` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -824,7 +834,22 @@ CREATE TABLE `analytics_logins` (
   KEY `user_id` (`user_id`),
   KEY `idx_logins_created` (`created_at`),
   CONSTRAINT `analytics_logins_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `analytics_feature_usage` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `feature` varchar(64) NOT NULL,
+  `visitor_id` varchar(64) NOT NULL,
+  `user_id` int(11) DEFAULT NULL,
+  `platform` enum('web','android','ios') NOT NULL DEFAULT 'web',
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `user_id` (`user_id`),
+  KEY `idx_feature_usage_created` (`created_at`),
+  KEY `idx_feature_usage_feature` (`feature`),
+  KEY `idx_feature_usage_platform` (`platform`),
+  CONSTRAINT `analytics_feature_usage_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `account_deletion_requests` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -866,7 +891,7 @@ CREATE TABLE `user_skills` (
   KEY `idx_user_skills_user_id` (`user_id`),
   CONSTRAINT `user_skills_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
   CONSTRAINT `user_skills_ibfk_2` FOREIGN KEY (`skill_id`) REFERENCES `skills` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=49 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=24 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `user_post_last_read` (
   `user_id` int(11) NOT NULL,
@@ -915,7 +940,7 @@ CREATE TABLE `tickets` (
   CONSTRAINT `tickets_ibfk_1` FOREIGN KEY (`company_id`) REFERENCES `companies` (`id`),
   CONSTRAINT `tickets_ibfk_2` FOREIGN KEY (`creator_id`) REFERENCES `users` (`id`),
   CONSTRAINT `tickets_ibfk_3` FOREIGN KEY (`assigned_to`) REFERENCES `users` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=54 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=44 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 CREATE TABLE `ticket_comments` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -930,7 +955,20 @@ CREATE TABLE `ticket_comments` (
   KEY `idx_ticket_comments_ticket_id` (`ticket_id`),
   CONSTRAINT `ticket_comments_ibfk_1` FOREIGN KEY (`ticket_id`) REFERENCES `tickets` (`id`) ON DELETE CASCADE,
   CONSTRAINT `ticket_comments_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `shortlists` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `band_id` int(11) NOT NULL,
+  `name` varchar(255) NOT NULL,
+  `created_by` int(11) NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `created_by` (`created_by`),
+  KEY `idx_shortlists_band_id` (`band_id`),
+  CONSTRAINT `shortlists_ibfk_1` FOREIGN KEY (`band_id`) REFERENCES `bands` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `shortlists_ibfk_2` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 CREATE TABLE `sessions` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -941,7 +979,7 @@ CREATE TABLE `sessions` (
   `mime_type` varchar(100) DEFAULT NULL,
   `uploaded_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `recorded_at` date DEFAULT NULL,
-  `session_type` enum('band','individual','mashup') NOT NULL DEFAULT 'band',
+  `session_type` enum('band','individual') NOT NULL DEFAULT 'band',
   `instrument_id` int(11) DEFAULT NULL,
   `band_id` int(11) DEFAULT NULL,
   `normalized` tinyint(1) NOT NULL DEFAULT 0,
@@ -952,7 +990,7 @@ CREATE TABLE `sessions` (
   CONSTRAINT `fk_sessions_band` FOREIGN KEY (`band_id`) REFERENCES `bands` (`id`) ON DELETE SET NULL,
   CONSTRAINT `fk_sessions_instrument` FOREIGN KEY (`instrument_id`) REFERENCES `instruments` (`id`) ON DELETE SET NULL,
   CONSTRAINT `sessions_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=68 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=31 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 CREATE TABLE `session_ratings` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -965,7 +1003,7 @@ CREATE TABLE `session_ratings` (
   KEY `user_id` (`user_id`),
   CONSTRAINT `session_ratings_ibfk_1` FOREIGN KEY (`session_id`) REFERENCES `sessions` (`id`) ON DELETE CASCADE,
   CONSTRAINT `session_ratings_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 CREATE TABLE `scheduled_chat_messages` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -984,7 +1022,7 @@ CREATE TABLE `scheduled_chat_messages` (
   KEY `room_id` (`room_id`),
   CONSTRAINT `scheduled_chat_messages_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
   CONSTRAINT `scheduled_chat_messages_ibfk_2` FOREIGN KEY (`room_id`) REFERENCES `chat_rooms` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 CREATE TABLE `projects` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -1000,7 +1038,7 @@ CREATE TABLE `projects` (
   KEY `idx_projects_company_id` (`company_id`),
   KEY `idx_projects_company_default` (`company_id`,`is_default`),
   CONSTRAINT `projects_ibfk_1` FOREIGN KEY (`company_id`) REFERENCES `companies` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `orders` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -1019,8 +1057,9 @@ CREATE TABLE `orders` (
   `shipping_cost_cents` int(11) NOT NULL DEFAULT 0,
   `platform_fee_cents` int(11) NOT NULL DEFAULT 0,
   `total_cents` int(11) NOT NULL,
-  `stripe_payment_intent_id` varchar(255) DEFAULT NULL,
-  `stripe_connected_account_id` varchar(255) DEFAULT NULL,
+  `payment_processor` enum('stripe','square','paypal') NOT NULL DEFAULT 'stripe',
+  `payment_intent_id` varchar(255) DEFAULT NULL,
+  `payment_connected_account_id` varchar(255) DEFAULT NULL,
   `status` enum('pending_payment','paid','processing','shipped','delivered','cancelled','refunded') NOT NULL DEFAULT 'pending_payment',
   `tracking_number` varchar(255) DEFAULT NULL,
   `tracking_carrier` varchar(100) DEFAULT NULL,
@@ -1032,7 +1071,7 @@ CREATE TABLE `orders` (
   KEY `fk_order_seller` (`seller_user_id`),
   CONSTRAINT `fk_order_item` FOREIGN KEY (`collection_item_id`) REFERENCES `collection_items` (`id`),
   CONSTRAINT `fk_order_seller` FOREIGN KEY (`seller_user_id`) REFERENCES `users` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `open_positions` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -1075,7 +1114,7 @@ CREATE TABLE `notification_types` (
   KEY `idx_notification_types_event` (`event_id`),
   KEY `idx_notification_types_active` (`is_active`),
   CONSTRAINT `notification_types_ibfk_1` FOREIGN KEY (`event_id`) REFERENCES `event_types` (`id`) ON DELETE SET NULL
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `notification_type_users` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -1095,18 +1134,71 @@ CREATE TABLE `notification_type_groups` (
   CONSTRAINT `notification_type_groups_ibfk_2` FOREIGN KEY (`group_id`) REFERENCES `groups` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE `mashup_sources` (
+CREATE TABLE `haulonaut_sectors` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `mashup_session_id` int(11) NOT NULL,
-  `source_session_id` int(11) NOT NULL,
-  `volume` decimal(4,3) NOT NULL DEFAULT 1.000,
+  `game_instance_id` int(11) NOT NULL,
+  `sector_number` int(11) NOT NULL,
+  `description` text DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`id`),
-  KEY `mashup_session_id` (`mashup_session_id`),
-  KEY `source_session_id` (`source_session_id`),
-  CONSTRAINT `mashup_sources_ibfk_1` FOREIGN KEY (`mashup_session_id`) REFERENCES `sessions` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `mashup_sources_ibfk_2` FOREIGN KEY (`source_session_id`) REFERENCES `sessions` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+  UNIQUE KEY `uq_haulonaut_sector` (`game_instance_id`,`sector_number`),
+  CONSTRAINT `haulonaut_sectors_ibfk_1` FOREIGN KEY (`game_instance_id`) REFERENCES `game_instances` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=2193 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `haulonaut_sector_links` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `game_instance_id` int(11) NOT NULL,
+  `from_sector_id` int(11) NOT NULL,
+  `to_sector_id` int(11) NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_haulonaut_link` (`from_sector_id`,`to_sector_id`),
+  KEY `to_sector_id` (`to_sector_id`),
+  KEY `idx_haulonaut_links_instance` (`game_instance_id`),
+  CONSTRAINT `haulonaut_sector_links_ibfk_1` FOREIGN KEY (`game_instance_id`) REFERENCES `game_instances` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `haulonaut_sector_links_ibfk_2` FOREIGN KEY (`from_sector_id`) REFERENCES `haulonaut_sectors` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `haulonaut_sector_links_ibfk_3` FOREIGN KEY (`to_sector_id`) REFERENCES `haulonaut_sectors` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=9295 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `haulonaut_sector_features` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `sector_id` int(11) NOT NULL,
+  `feature_type` varchar(32) NOT NULL,
+  `name` varchar(128) NOT NULL,
+  `description` text DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `idx_sector_features_sector` (`sector_id`),
+  KEY `idx_sector_features_type` (`feature_type`),
+  CONSTRAINT `haulonaut_sector_features_ibfk_1` FOREIGN KEY (`sector_id`) REFERENCES `haulonaut_sectors` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=16 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `game_users` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `game_instance_id` int(11) NOT NULL,
+  `user_id` int(11) DEFAULT NULL,
+  `visitor_id` varchar(64) DEFAULT NULL,
+  `display_name` varchar(64) NOT NULL,
+  `status` enum('active','dead','abandoned') NOT NULL DEFAULT 'active',
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `last_played_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `died_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `user_id` (`user_id`),
+  KEY `idx_game_users_instance_user` (`game_instance_id`,`user_id`),
+  KEY `idx_game_users_instance_visitor` (`game_instance_id`,`visitor_id`),
+  CONSTRAINT `game_users_ibfk_1` FOREIGN KEY (`game_instance_id`) REFERENCES `game_instances` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `game_users_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `game_settings` (
+  `game_user_id` int(11) NOT NULL,
+  `setting_key` varchar(64) NOT NULL,
+  `setting_value` text DEFAULT NULL,
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`game_user_id`,`setting_key`),
+  CONSTRAINT `game_settings_ibfk_1` FOREIGN KEY (`game_user_id`) REFERENCES `game_users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `events` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -1120,7 +1212,7 @@ CREATE TABLE `events` (
   KEY `idx_events_time` (`time`),
   CONSTRAINT `events_ibfk_1` FOREIGN KEY (`type_id`) REFERENCES `event_types` (`id`) ON DELETE CASCADE,
   CONSTRAINT `events_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
-) ENGINE=InnoDB AUTO_INCREMENT=135 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=38 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `employees` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -1139,40 +1231,7 @@ CREATE TABLE `employees` (
   KEY `company_id` (`company_id`),
   CONSTRAINT `employees_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`),
   CONSTRAINT `employees_ibfk_2` FOREIGN KEY (`company_id`) REFERENCES `companies` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
-CREATE TABLE `custom_domains` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `user_id` int(11) NOT NULL,
-  `content_type` enum('storefront','band_page') NOT NULL DEFAULT 'storefront',
-  `band_id` int(11) DEFAULT NULL,
-  `domain` varchar(255) NOT NULL,
-  `status` enum('pending_dns','provisioning','active','failed','removing') NOT NULL DEFAULT 'pending_dns',
-  `verification_attempts` int(11) NOT NULL DEFAULT 0,
-  `last_checked_at` timestamp NULL DEFAULT NULL,
-  `error_message` varchar(500) DEFAULT NULL,
-  `activated_at` timestamp NULL DEFAULT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-  `dns_confirmed_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `idx_custom_domains_domain` (`domain`),
-  KEY `user_id` (`user_id`),
-  KEY `idx_custom_domains_status` (`status`),
-  KEY `fk_custom_domains_band` (`band_id`),
-  CONSTRAINT `custom_domains_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_custom_domains_band` FOREIGN KEY (`band_id`) REFERENCES `bands` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
-CREATE TABLE `band_page_songs` (
-  `band_id` int(11) NOT NULL,
-  `session_id` int(11) NOT NULL,
-  `display_order` int(11) NOT NULL DEFAULT 0,
-  PRIMARY KEY (`band_id`,`session_id`),
-  KEY `fk_bps_session` (`session_id`),
-  CONSTRAINT `fk_bps_band` FOREIGN KEY (`band_id`) REFERENCES `bands` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_bps_session` FOREIGN KEY (`session_id`) REFERENCES `sessions` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 CREATE TABLE `ticket_projects` (
   `ticket_id` int(11) NOT NULL,
@@ -1182,6 +1241,21 @@ CREATE TABLE `ticket_projects` (
   CONSTRAINT `ticket_projects_ibfk_1` FOREIGN KEY (`ticket_id`) REFERENCES `tickets` (`id`) ON DELETE CASCADE,
   CONSTRAINT `ticket_projects_ibfk_2` FOREIGN KEY (`project_id`) REFERENCES `projects` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `shortlist_sessions` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `shortlist_id` int(11) NOT NULL,
+  `session_id` int(11) NOT NULL,
+  `added_by` int(11) NOT NULL,
+  `added_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uniq_shortlist_session` (`shortlist_id`,`session_id`),
+  KEY `added_by` (`added_by`),
+  KEY `idx_shortlist_sessions_session_id` (`session_id`),
+  CONSTRAINT `shortlist_sessions_ibfk_1` FOREIGN KEY (`shortlist_id`) REFERENCES `shortlists` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `shortlist_sessions_ibfk_2` FOREIGN KEY (`session_id`) REFERENCES `sessions` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `shortlist_sessions_ibfk_3` FOREIGN KEY (`added_by`) REFERENCES `users` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 CREATE TABLE `notifications` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -1195,7 +1269,41 @@ CREATE TABLE `notifications` (
   KEY `idx_notifications_notif` (`notif_id`),
   CONSTRAINT `notifications_ibfk_1` FOREIGN KEY (`notif_id`) REFERENCES `notification_types` (`id`) ON DELETE CASCADE,
   CONSTRAINT `notifications_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=40 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=34 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `haulonaut_visited_sectors` (
+  `game_user_id` int(11) NOT NULL,
+  `sector_id` int(11) NOT NULL,
+  `first_visited_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `last_visited_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`game_user_id`,`sector_id`),
+  KEY `idx_visited_sectors_sector` (`sector_id`),
+  CONSTRAINT `haulonaut_visited_sectors_ibfk_1` FOREIGN KEY (`game_user_id`) REFERENCES `game_users` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `haulonaut_visited_sectors_ibfk_2` FOREIGN KEY (`sector_id`) REFERENCES `haulonaut_sectors` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `haulonaut_pilots` (
+  `game_user_id` int(11) NOT NULL,
+  `current_sector_id` int(11) NOT NULL,
+  `credits` int(11) NOT NULL DEFAULT 1000,
+  `rations` int(11) NOT NULL DEFAULT 100,
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`game_user_id`),
+  KEY `idx_haulonaut_pilots_sector` (`current_sector_id`),
+  CONSTRAINT `haulonaut_pilots_ibfk_1` FOREIGN KEY (`game_user_id`) REFERENCES `game_users` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `haulonaut_pilots_ibfk_2` FOREIGN KEY (`current_sector_id`) REFERENCES `haulonaut_sectors` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `haulonaut_pilot_inventory` (
+  `game_user_id` int(11) NOT NULL,
+  `item_id` int(11) NOT NULL,
+  `quantity` int(11) NOT NULL DEFAULT 0,
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`game_user_id`,`item_id`),
+  KEY `item_id` (`item_id`),
+  CONSTRAINT `haulonaut_pilot_inventory_ibfk_1` FOREIGN KEY (`game_user_id`) REFERENCES `game_users` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `haulonaut_pilot_inventory_ibfk_2` FOREIGN KEY (`item_id`) REFERENCES `haulonaut_items` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `blog_comments` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -1217,6 +1325,23 @@ CREATE TABLE `blog_comments` (
   CONSTRAINT `blog_comments_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
   CONSTRAINT `blog_comments_ibfk_3` FOREIGN KEY (`parent_id`) REFERENCES `blog_comments` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `session_comments` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `session_id` int(11) NOT NULL,
+  `user_id` int(11) NOT NULL,
+  `parent_id` int(11) DEFAULT NULL,
+  `content` text NOT NULL,
+  `is_deleted` tinyint(1) NOT NULL DEFAULT 0,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `user_id` (`user_id`),
+  KEY `parent_id` (`parent_id`),
+  KEY `idx_session_comments_session_id` (`session_id`),
+  CONSTRAINT `session_comments_ibfk_1` FOREIGN KEY (`session_id`) REFERENCES `sessions` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `session_comments_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`),
+  CONSTRAINT `session_comments_ibfk_3` FOREIGN KEY (`parent_id`) REFERENCES `session_comments` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 
 -- Re-enable foreign key checks

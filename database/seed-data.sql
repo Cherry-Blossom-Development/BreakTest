@@ -167,3 +167,69 @@ FROM notification_types nt
 JOIN event_types et ON nt.event_id = et.id
 JOIN users u ON u.handle IN ('testadmin', 'testuser')
 WHERE et.type = 'eula_required';
+
+-- ======================
+-- Games / Haulonaut Test Data
+-- ======================
+-- A minimal, deterministic 2-sector universe so e2e tests don't depend on
+-- the 1000-sector random generator. Both sectors carry the same trading
+-- outpost so the outpost flow is reachable regardless of which sector a
+-- freshly-created character spawns into (spawn sector is chosen at random
+-- by the app, same as production).
+
+INSERT INTO features (feature_key, name, description, is_active) VALUES
+  ('games', 'Games', 'Access to the Games section', 1);
+
+INSERT INTO feature_users (feature_id, user_id, added_method)
+SELECT f.id, u.id, 'manual'
+FROM features f, users u
+WHERE f.feature_key = 'games' AND u.handle IN ('testadmin', 'testuser');
+
+INSERT INTO games (game_key, name, description, is_active) VALUES
+  ('haulonaut', 'Haulonaut', 'A text-based space trading and exploration game in the Trade Wars / BBS door-game tradition. Haul cargo, chart a universe of sectors, and make (or lose) your fortune.', 1);
+
+INSERT INTO haulonaut_items (item_key, name, category, description, base_price) VALUES
+  ('rations', 'Rations', 'consumable', 'Feeds your crew. Every warp burns a little.', 4),
+  ('fuel', 'Fuel Cell', 'consumable', 'Extra reserve fuel.', 6),
+  ('hull_plating', 'Hull Plating', 'equipment', 'Reinforces your ship''s hull.', 180),
+  ('shield_generator', 'Shield Generator', 'equipment', 'Basic deflector shielding.', 400),
+  ('laser_cannon', 'Laser Cannon', 'weapon', 'A modest offensive weapon.', 250);
+
+INSERT INTO game_instances (game_id, name, status, started_at)
+SELECT id, 'Test Universe', 'active', NOW() FROM games WHERE game_key = 'haulonaut';
+
+INSERT INTO haulonaut_sectors (game_instance_id, sector_number, description)
+SELECT gi.id, n.sector_number, n.description
+FROM game_instances gi
+JOIN games g ON g.id = gi.game_id
+CROSS JOIN (
+  SELECT 1 AS sector_number, 'A quiet test sector. Nothing much happens here.' AS description
+  UNION ALL
+  SELECT 2, 'Another quiet test sector, much like the first.'
+) n
+WHERE g.game_key = 'haulonaut' AND gi.name = 'Test Universe';
+
+INSERT INTO haulonaut_sector_links (game_instance_id, from_sector_id, to_sector_id)
+SELECT s1.game_instance_id, s1.id, s2.id
+FROM haulonaut_sectors s1
+JOIN haulonaut_sectors s2 ON s2.game_instance_id = s1.game_instance_id
+JOIN game_instances gi ON gi.id = s1.game_instance_id
+JOIN games g ON g.id = gi.game_id
+WHERE g.game_key = 'haulonaut' AND gi.name = 'Test Universe'
+  AND s1.sector_number = 1 AND s2.sector_number = 2;
+
+INSERT INTO haulonaut_sector_links (game_instance_id, from_sector_id, to_sector_id)
+SELECT s1.game_instance_id, s1.id, s2.id
+FROM haulonaut_sectors s1
+JOIN haulonaut_sectors s2 ON s2.game_instance_id = s1.game_instance_id
+JOIN game_instances gi ON gi.id = s1.game_instance_id
+JOIN games g ON g.id = gi.game_id
+WHERE g.game_key = 'haulonaut' AND gi.name = 'Test Universe'
+  AND s1.sector_number = 2 AND s2.sector_number = 1;
+
+INSERT INTO haulonaut_sector_features (sector_id, feature_type, name, description)
+SELECT hs.id, 'trading_outpost', 'Test Outpost', 'A small trading post for automated testing.'
+FROM haulonaut_sectors hs
+JOIN game_instances gi ON gi.id = hs.game_instance_id
+JOIN games g ON g.id = gi.game_id
+WHERE g.game_key = 'haulonaut' AND gi.name = 'Test Universe';
