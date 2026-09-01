@@ -1,7 +1,7 @@
 -- =============================================================================
 -- Test Database Schema
 -- Generated from dev database: breakroom_dev
--- Generated at: 2026-08-28T17:30:41.599Z
+-- Generated at: 2026-09-01T15:29:19.626Z
 --
 -- Blacklisted tables (not included):
 --   - test_cases
@@ -1287,6 +1287,7 @@ CREATE TABLE `haulonaut_pilots` (
   `current_sector_id` int(11) NOT NULL,
   `credits` int(11) NOT NULL DEFAULT 1000,
   `rations` int(11) NOT NULL DEFAULT 100,
+  `fuel` int(11) NOT NULL DEFAULT 100,
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   PRIMARY KEY (`game_user_id`),
   KEY `idx_haulonaut_pilots_sector` (`current_sector_id`),
